@@ -10,8 +10,8 @@ object Mining {
     const val COL_XP = 2
     const val COL_ORE_ITEM = 3
     const val COL_RESPAWN_CYCLES = 4
-    const val COL_SUCCESS_RATE_LOW = 5
-    const val COL_SUCCESS_RATE_HIGH = 6
+    const val COL_YIELD_MIN = 5
+    const val COL_YIELD_MAX = 6
     const val COL_DESPAWN_TICKS = 7
     const val COL_DEPLETE_MECHANIC = 8
     const val COL_EMPTY_ROCK = 9
@@ -78,8 +78,8 @@ object Mining {
         column("xp", COL_XP, VarType.INT)
         column("ore_item", COL_ORE_ITEM, VarType.OBJ)
         column("respawn_cycles", COL_RESPAWN_CYCLES, VarType.INT)
-        column("success_rate_low", COL_SUCCESS_RATE_LOW, VarType.INT)
-        column("success_rate_high", COL_SUCCESS_RATE_HIGH, VarType.INT)
+        column("yield_min", COL_YIELD_MIN, VarType.INT)
+        column("yield_max", COL_YIELD_MAX, VarType.INT)
         column("despawn_ticks", COL_DESPAWN_TICKS, VarType.INT)
         column("deplete_mechanic", COL_DEPLETE_MECHANIC, VarType.INT)
         column("empty_rock_object", COL_EMPTY_ROCK, VarType.LOC)
@@ -93,8 +93,8 @@ object Mining {
             column(COL_XP, 5)
             columnRSCM(COL_ORE_ITEM, "items.clay")
             column(COL_RESPAWN_CYCLES, 2)
-            column(COL_SUCCESS_RATE_LOW, 64)
-            column(COL_SUCCESS_RATE_HIGH, 256)
+            column(COL_YIELD_MIN, 1)
+            column(COL_YIELD_MAX, 4)
             column(COL_DESPAWN_TICKS, 0)
             column(COL_DEPLETE_MECHANIC, 3) // Always
             columnRSCM(COL_EMPTY_ROCK, "objects.rocks2")
@@ -108,8 +108,8 @@ object Mining {
             column(COL_XP, 17.5)
             columnRSCM(COL_ORE_ITEM, "items.copper_ore")
             column(COL_RESPAWN_CYCLES, 4)
-            column(COL_SUCCESS_RATE_LOW, 64)
-            column(COL_SUCCESS_RATE_HIGH, 256)
+            column(COL_YIELD_MIN, 1)
+            column(COL_YIELD_MAX, 4)
             column(COL_DESPAWN_TICKS, 0)
             column(COL_DEPLETE_MECHANIC, 0) // Always
             columnRSCM(COL_EMPTY_ROCK, "objects.rocks2")
@@ -123,8 +123,8 @@ object Mining {
             column(COL_XP, 17.5)
             columnRSCM(COL_ORE_ITEM, "items.tin_ore")
             column(COL_RESPAWN_CYCLES, 4)
-            column(COL_SUCCESS_RATE_LOW, 64)
-            column(COL_SUCCESS_RATE_HIGH, 256)
+            column(COL_YIELD_MIN, 1)
+            column(COL_YIELD_MAX, 4)
             column(COL_DESPAWN_TICKS, 45)
             column(COL_DEPLETE_MECHANIC, 1) // Always
             columnRSCM(COL_EMPTY_ROCK, "objects.rocks2")
@@ -262,8 +262,8 @@ object Mining {
             column(COL_XP, 240)
             columnRSCM(COL_ORE_ITEM, "items.amethyst")
             column(COL_RESPAWN_CYCLES, 125)
-            column(COL_SUCCESS_RATE_LOW, 8)
-            column(COL_SUCCESS_RATE_HIGH, 512)
+            column(COL_YIELD_MIN, 1)
+            column(COL_YIELD_MAX, 8)
             column(COL_DESPAWN_TICKS, 45)
             column(COL_DEPLETE_MECHANIC, 1) // Always
             columnRSCM(COL_EMPTY_ROCK, "objects.amethystrock_empty")

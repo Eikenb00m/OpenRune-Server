@@ -25,8 +25,8 @@ object MiningDefinitions {
         val xp: Double,
         val ore: Int,
         val respawnCycles: Int,
-        val successRateLow: Int,
-        val successRateHigh: Int,
+        val yieldMin: Int,
+        val yieldMax: Int,
         val despawnTicks: Int,
         val depleteMechanic: Int,
         val depletedRock: Int?,
@@ -53,8 +53,8 @@ object MiningDefinitions {
         val xp = rockTable.column("columns.mining_rocks:xp", IntType).toDouble()
         val oreItem = rockTable.column("columns.mining_rocks:ore_item", ObjType)
         val respawnCycles = rockTable.column("columns.mining_rocks:respawn_cycles", IntType)
-        val successRateLow = rockTable.column("columns.mining_rocks:success_rate_low", IntType)
-        val successRateHigh = rockTable.column("columns.mining_rocks:success_rate_high", IntType)
+        val yieldMin = rockTable.column("columns.mining_rocks:yield_min", IntType)
+        val yieldMax = rockTable.column("columns.mining_rocks:yield_max", IntType)
         val despawnTicks = rockTable.column("columns.mining_rocks:despawn_ticks", IntType)
         val depleteMechanic = rockTable.column("columns.mining_rocks:deplete_mechanic", IntType)
         val depletedRock = rockTable.columnOptional("columns.mining_rocks:empty_rock_object", LocType)
@@ -66,8 +66,8 @@ object MiningDefinitions {
             xp = xp,
             ore = oreItem,
             respawnCycles = respawnCycles,
-            successRateLow = successRateLow,
-            successRateHigh = successRateHigh,
+            yieldMin = yieldMin,
+            yieldMax = yieldMax,
             despawnTicks = despawnTicks,
             depleteMechanic = depleteMechanic,
             depletedRock = depletedRock,

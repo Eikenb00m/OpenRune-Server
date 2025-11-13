@@ -3,7 +3,6 @@ package org.alter.skills.mining
 import io.github.oshai.kotlinlogging.KotlinLogging
 import org.alter.api.*
 import org.alter.api.ext.*
-import org.alter.api.success
 import org.alter.game.model.attr.AttributeKey
 import org.alter.game.model.attr.INTERACTING_OBJ_ATTR
 import org.alter.game.model.entity.GameObject
@@ -25,6 +24,7 @@ import org.alter.rscm.RSCM.getRSCM
 import org.alter.rscm.RSCMType
 import org.alter.skills.mining.MiningDefinitions.pickaxeData
 import org.alter.skills.mining.MiningDefinitions.tableToRockData
+import kotlin.random.Random
 
 class MiningPlugin : PluginEvent() {
 
@@ -50,6 +50,11 @@ class MiningPlugin : PluginEvent() {
          * Attribute key for storing the max countdown value for a rock.
          */
         val MAX_COUNTDOWN_ATTR = AttributeKey<Int>()
+
+        /**
+         * Attribute key for storing how many resources remain before the rock depletes.
+         */
+        val REMAINING_YIELD_ATTR = AttributeKey<Int>()
     }
 
     /**
@@ -134,6 +139,40 @@ class MiningPlugin : PluginEvent() {
 
     private fun getDepletedRock(rockData: MiningDefinitions.RockData): Int? = rockData.depletedRock
 
+    private fun getOrInitializeRemainingYield(
+        obj: GameObject,
+        rockData: MiningDefinitions.RockData,
+    ): Int {
+        val min = rockData.yieldMin.coerceAtLeast(1)
+        val max = rockData.yieldMax.coerceAtLeast(min)
+        val current = obj.attr[REMAINING_YIELD_ATTR]
+        if (current != null && current > 0) {
+            return current
+        }
+
+        val roll = if (min == max) {
+            min
+        } else {
+            Random.nextInt(min, max + 1)
+        }
+
+        obj.attr[REMAINING_YIELD_ATTR] = roll
+        return roll
+    }
+
+    private fun decrementRemainingYield(
+        obj: GameObject,
+        rockData: MiningDefinitions.RockData,
+    ): Int {
+        val remaining = getOrInitializeRemainingYield(obj, rockData) - 1
+        if (remaining <= 0) {
+            obj.attr.remove(REMAINING_YIELD_ATTR)
+        } else {
+            obj.attr[REMAINING_YIELD_ATTR] = remaining
+        }
+        return remaining
+    }
+
     private fun hasAnyPickaxe(player: Player): Boolean {
         player.equipment[EquipmentType.WEAPON.id]?.let { weapon ->
             if (pickaxeData.containsKey(weapon.id)) return true
@@ -190,6 +229,8 @@ class MiningPlugin : PluginEvent() {
         columnId: Int,
         rockData: MiningDefinitions.RockData,
     ): Boolean {
+        obj.attr.remove(REMAINING_YIELD_ATTR)
+
         val specialRock = EventManager.postWithResult(
             RockDepleteEvent(
                 player = player,
@@ -253,8 +294,8 @@ class MiningPlugin : PluginEvent() {
         player.faceTile(nearestTile)
         player.message("You swing your pickaxe at the rock.")
 
-        val tickDelay = pickaxe.tickDelay
-        val (low, high) = rockData.successRateLow to rockData.successRateHigh
+        val tickDelay = pickaxe.tickDelay.coerceAtLeast(1)
+        val successChance = 1.0 / tickDelay.toDouble()
         val animationId = resolveAnimationId(pickaxe, rockData.rockType)
         val miningAnimation = RSCM.getReverseMapping(RSCMType.SEQTYPES, animationId) ?: return
 
@@ -268,9 +309,11 @@ class MiningPlugin : PluginEvent() {
                 obj.setTimer(ROCK_COUNTDOWN_TIMER, rockData.despawnTicks)
                 obj.attr[MAX_COUNTDOWN_ATTR] = rockData.despawnTicks
             }
+
+            getOrInitializeRemainingYield(obj, rockData)
         }
 
-        repeatWhile(delay = tickDelay, immediate = false, canRepeat = {
+        repeatWhile(delay = 1, immediate = false, canRepeat = {
             val currentNearestTile = obj.findNearestTile(player.tile)
             player.tile.isWithinRadius(currentNearestTile, 1) &&
                 !player.inventory.isFull &&
@@ -278,7 +321,7 @@ class MiningPlugin : PluginEvent() {
                 !isDepletedRock(obj, depletedId, player)
         }) {
 
-            val success = success(low, high, miningLevel)
+            val success = Random.nextDouble() <= successChance
 
             if (success) {
                 RockOreObtainedEvent(player, obj, rockData, rockTable.id).post()
@@ -292,7 +335,10 @@ class MiningPlugin : PluginEvent() {
 
                 val shouldDeplete = when {
                     rockData.isInfiniteResource() -> false
-                    rockData.usesCountdown() -> obj.getTimeLeft(ROCK_COUNTDOWN_TIMER) <= 0
+                    rockData.usesCountdown() -> {
+                        val remaining = decrementRemainingYield(obj, rockData)
+                        remaining <= 0 || obj.getTimeLeft(ROCK_COUNTDOWN_TIMER) <= 0
+                    }
                     else -> true
                 }
 
@@ -300,6 +346,7 @@ class MiningPlugin : PluginEvent() {
                     if (rockData.usesCountdown()) {
                         obj.attr[ACTIVE_MINERS_ATTR]?.remove(player)
                     }
+                    obj.attr.remove(REMAINING_YIELD_ATTR)
                     depleteRock(player, obj, rockTable.id, rockData)
                     return@repeatWhile
                 }
