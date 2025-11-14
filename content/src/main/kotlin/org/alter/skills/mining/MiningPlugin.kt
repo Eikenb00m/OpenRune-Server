@@ -50,6 +50,20 @@ class MiningPlugin : PluginEvent() {
          * Attribute key for storing the max countdown value for a rock.
          */
         val MAX_COUNTDOWN_ATTR = AttributeKey<Int>()
+
+        /**
+         * Attribute key for overriding the ore that will be awarded on the next
+         * successful mining cycle. This allows specialised mining scripts to
+         * customise the resource without re-implementing the core mining
+         * behaviour.
+         */
+        val ORE_OVERRIDE_ATTR = AttributeKey<Int>()
+
+        /**
+         * RSCM identifier for rune essence rocks. Used for handling rune
+         * essence specific behaviour such as the slower gather rate.
+         */
+        private val RUNE_ESSENCE_ROCK_TYPE = getRSCM("dbrows.mining_essence")
     }
 
     /**
@@ -166,7 +180,11 @@ class MiningPlugin : PluginEvent() {
         player: Player,
         rockData: MiningDefinitions.RockData,
     ): Boolean {
-        val oreItem = rockData.ore
+        val overrideOre = player.attr[ORE_OVERRIDE_ATTR]
+        if (overrideOre != null) {
+            player.attr.remove(ORE_OVERRIDE_ATTR)
+        }
+        val oreItem = overrideOre ?: rockData.ore
         if (player.inventory.add(oreItem, 1).hasSucceeded()) {
             player.addXp(Skills.MINING, rockData.xp)
             try {
@@ -252,7 +270,10 @@ class MiningPlugin : PluginEvent() {
         player.faceTile(nearestTile)
         player.message("You swing your pickaxe at the rock.")
 
-        val tickDelay = pickaxe.tickDelay
+        var tickDelay = pickaxe.tickDelay
+        if (rockTable.id == RUNE_ESSENCE_ROCK_TYPE) {
+            tickDelay *= 2
+        }
         val (low, high) = rockData.successRateLow to rockData.successRateHigh
         val animationId = resolveAnimationId(pickaxe, rockData.rockType)
         val miningAnimation = RSCM.getReverseMapping(RSCMType.SEQTYPES, animationId) ?: return
