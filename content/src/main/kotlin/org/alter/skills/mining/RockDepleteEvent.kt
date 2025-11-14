@@ -26,20 +26,22 @@ class RockDepleteEvent(
 
 /**
  * Event triggered when a player successfully obtains ore from a rock.
+ *
+ * @property oreItemId The item identifier representing the ore that was obtained.
  */
 class RockOreObtainedEvent(
     override val player: Player,
     rockObject: GameObject,
     rockData: MiningDefinitions.RockData,
     val rockType: Int,
-    resourceId: Int = rockData.ore,
+    val oreItemId: Int = rockData.ore,
     val clueBaseChance: Int = rockData.clueBaseChance,
 ) : SkillingActionCompletedGatheringEvent(
     player = player,
     skill = Skills.MINING,
     actionObject = rockObject,
     experienceGained = rockData.xp,
-    resourceId = resourceId,
+    resourceId = oreItemId,
     amountGathered = 1,
 )
 

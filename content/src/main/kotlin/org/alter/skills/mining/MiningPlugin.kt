@@ -204,6 +204,7 @@ class MiningPlugin : PluginEvent() {
         obj: GameObject,
         columnId: Int,
         rockData: MiningDefinitions.RockData,
+        oreItem: Int,
     ): Boolean {
         val specialRock = EventManager.postWithResult(
             RockDepleteEvent(
@@ -223,7 +224,12 @@ class MiningPlugin : PluginEvent() {
             obj.replaceWith(world, depleted, rockData.respawnCycles, restoreOriginal = true)
         }
 
-        player.message("You manage to mine some ${rockData.ore}.")
+        try {
+            val oreName = Item(oreItem).getName().lowercase()
+            player.message("You manage to mine some $oreName.")
+        } catch (e: Exception) {
+            player.message("You manage to mine some ore.")
+        }
         player.animate(RSCM.NONE)
 
         return false
@@ -316,7 +322,7 @@ class MiningPlugin : PluginEvent() {
                     if (rockData.usesCountdown()) {
                         obj.attr[ACTIVE_MINERS_ATTR]?.remove(player)
                     }
-                    depleteRock(player, obj, rockTable.id, rockData)
+                    depleteRock(player, obj, rockTable.id, rockData, oreItem)
                     return@repeatWhile
                 }
             }
