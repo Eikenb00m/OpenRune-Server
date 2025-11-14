@@ -36,6 +36,10 @@ class MiningPlugin : PluginEvent() {
          */
         const val ORE_OBTAINED_SOUND = 3600
 
+        private val RUNE_ESSENCE_ID = getRSCM("items.blankrune")
+        private val PURE_ESSENCE_ID = getRSCM("items.blankrune_high")
+        private const val PURE_ESSENCE_MINING_LEVEL = 30
+
         /**
          * Timer key for rock countdown timers.
          */
@@ -162,11 +166,22 @@ class MiningPlugin : PluginEvent() {
         return obj.getTransform(player) == depletedId
     }
 
+    private fun determineOreItem(player: Player, rockData: MiningDefinitions.RockData): Int {
+        if (rockData.ore == RUNE_ESSENCE_ID) {
+            val miningLevel = player.getSkills().getBaseLevel(Skills.MINING)
+            if (miningLevel >= PURE_ESSENCE_MINING_LEVEL) {
+                return PURE_ESSENCE_ID
+            }
+        }
+
+        return rockData.ore
+    }
+
     private fun handleOreObtained(
         player: Player,
+        oreItem: Int,
         rockData: MiningDefinitions.RockData,
     ): Boolean {
-        val oreItem = rockData.ore
         if (player.inventory.add(oreItem, 1).hasSucceeded()) {
             player.addXp(Skills.MINING, rockData.xp)
             try {
@@ -281,8 +296,9 @@ class MiningPlugin : PluginEvent() {
             val success = success(low, high, miningLevel)
 
             if (success) {
-                RockOreObtainedEvent(player, obj, rockData, rockTable.id).post()
-                val oreObtained = handleOreObtained(player, rockData)
+                val oreItem = determineOreItem(player, rockData)
+                RockOreObtainedEvent(player, obj, rockData, rockTable.id, oreItem).post()
+                val oreObtained = handleOreObtained(player, oreItem, rockData)
                 if (!oreObtained) {
                     if (rockData.usesCountdown()) {
                         obj.attr[ACTIVE_MINERS_ATTR]?.remove(player)
