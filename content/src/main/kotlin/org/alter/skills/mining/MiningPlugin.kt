@@ -1,5 +1,6 @@
 package org.alter.skills.mining
 
+import dev.openrune.ServerCacheManager
 import io.github.oshai.kotlinlogging.KotlinLogging
 import org.alter.api.*
 import org.alter.api.ext.*
@@ -88,7 +89,16 @@ class MiningPlugin : PluginEvent() {
             val rockObjects = rock.multiColumn("columns.mining_rocks:rock_object", LocType)
             rockObjects.forEach { rockId ->
                 try {
-                    onObjectOption(rockId, "mine") {
+                    val definition = ServerCacheManager.getObject(rockId)
+                    val availableOptions = definition?.actions?.filterNotNull().orEmpty()
+                    val miningOptions = availableOptions.filter { it.equals("mine", ignoreCase = true) }
+                    val optionsToRegister = when {
+                        miningOptions.isNotEmpty() -> miningOptions
+                        availableOptions.isNotEmpty() -> listOf(availableOptions.first())
+                        else -> listOf("mine")
+                    }
+
+                    onObjectOption(rockId, *optionsToRegister.toTypedArray()) {
                         player.queue { mineRock(player, rock) }
                     }
                 } catch (e: Exception) {
