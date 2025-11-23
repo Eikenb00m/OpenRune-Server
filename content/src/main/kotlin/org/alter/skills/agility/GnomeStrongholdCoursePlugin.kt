@@ -146,6 +146,7 @@ class GnomeStrongholdCoursePlugin : PluginEvent() {
             val destination = obstacle.endTile ?: obstacle.destination(player, obj)
             val direction = if (obstacle == obstacles.first()) Direction.SOUTH else Direction.between(player.tile, destination)
             player.faceTile(obj.tile)
+            player.lock()
             when (obstacle.movementType) {
                 MovementType.FORCED_WALK -> {
                     val distance = player.tile.getDistance(destination)
@@ -169,6 +170,7 @@ class GnomeStrongholdCoursePlugin : PluginEvent() {
                     player.forceMove(this, movement)
                 }
             }
+            player.unlock()
             player.addXp(Skills.AGILITY, obstacle.experience)
         }
     }
