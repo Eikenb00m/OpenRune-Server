@@ -108,17 +108,25 @@ fun Route.toTileQueue(): Queue<Tile> {
 }
 
 fun Pawn.stopMovement() = movementQueue.clear()
-fun Pawn.walkTo(tile: Tile, stepType: StepType = StepType.NORMAL) =
-    walkTo(targetX = tile.x, targetY = tile.z, stepType = stepType)
+fun Pawn.walkTo(
+    tile: Tile,
+    stepType: StepType = StepType.NORMAL,
+    detectCollision: Boolean = true,
+) = walkTo(targetX = tile.x, targetY = tile.z, stepType = stepType, detectCollision = detectCollision)
 
-fun Pawn.walkRoute(route: RouteCoordinates, stepType: StepType = StepType.NORMAL) {
-    this.walkTo(Tile(route.x, route.z), stepType)
+fun Pawn.walkRoute(
+    route: RouteCoordinates,
+    stepType: StepType = StepType.NORMAL,
+    detectCollision: Boolean = true,
+) {
+    this.walkTo(Tile(route.x, route.z), stepType, detectCollision)
 }
 
 fun Pawn.walkTo(
     targetX: Int,
     targetY: Int,
     stepType: StepType = StepType.NORMAL,
+    detectCollision: Boolean = true,
 ) {
     if (this is Player) {
         if (!lock.canMove()) {
@@ -131,6 +139,15 @@ fun Pawn.walkTo(
         this.closeInterfaceModal()
         this.interruptQueues()
         this.resetInteractions()
+    }
+
+    if (!detectCollision) {
+        movementQueue.clear()
+        movementQueue.addStep(Tile(targetX, targetY, tile.height), stepType)
+        if (this is Player && lastKnownRegionBase != null) {
+            setMapFlag(targetX - lastKnownRegionBase!!.x, targetY - lastKnownRegionBase!!.z)
+        }
+        return
     }
 
     val route = world.smartRouteFinder.findRoute(
