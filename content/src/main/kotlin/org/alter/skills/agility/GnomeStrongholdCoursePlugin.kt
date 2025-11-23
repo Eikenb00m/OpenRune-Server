@@ -34,7 +34,9 @@ class GnomeStrongholdCoursePlugin : PluginEvent() {
             option = "walk-across",
             animation = "sequences.human_walk_logbalance",
             experience = 7.5,
-            clientDuration = 60,
+            clientDuration1 = 60,
+            clientDuration2 = 60,
+            endTile = Tile(x = 2474, y = 3429, z = 0),
             destination = { _, obj -> obj.tile.step(Direction.SOUTH, 7) },
         ),
         CourseObstacle(
@@ -42,7 +44,8 @@ class GnomeStrongholdCoursePlugin : PluginEvent() {
             option = "climb-over",
             animation = "sequences.agility_climb_net",
             experience = 7.5,
-            clientDuration = 45,
+            clientDuration1 = 45,
+            clientDuration2 = 45,
             destination = { _, obj -> obj.tile.transform(0, 2, 1) },
         ),
         CourseObstacle(
@@ -50,7 +53,8 @@ class GnomeStrongholdCoursePlugin : PluginEvent() {
             option = "climb",
             animation = "sequences.agility_climb_branch",
             experience = 5.0,
-            clientDuration = 30,
+            clientDuration1 = 30,
+            clientDuration2 = 30,
             destination = { _, obj -> obj.tile.transform(0, 0, 2) },
         ),
         CourseObstacle(
@@ -58,7 +62,8 @@ class GnomeStrongholdCoursePlugin : PluginEvent() {
             option = "walk-on",
             animation = "sequences.agility_balancing_rope",
             experience = 7.5,
-            clientDuration = 72,
+            clientDuration1 = 72,
+            clientDuration2 = 72,
             destination = { player, obj ->
                 val direction = if (player.tile.x <= obj.tile.x) Direction.WEST else Direction.EAST
                 obj.tile.transform(0, 0, 2).step(direction, 6)
@@ -69,7 +74,8 @@ class GnomeStrongholdCoursePlugin : PluginEvent() {
             option = "climb-down",
             animation = "sequences.agility_climb_branch",
             experience = 5.0,
-            clientDuration = 30,
+            clientDuration1 = 30,
+            clientDuration2 = 30,
             destination = { _, obj -> obj.tile.transform(0, 0, -2) },
         ),
         CourseObstacle(
@@ -77,7 +83,8 @@ class GnomeStrongholdCoursePlugin : PluginEvent() {
             option = "climb-over",
             animation = "sequences.agility_climb_net",
             experience = 7.5,
-            clientDuration = 45,
+            clientDuration1 = 45,
+            clientDuration2 = 45,
             destination = { player, obj ->
                 val direction = if (player.tile.z >= obj.tile.z) Direction.SOUTH else Direction.NORTH
                 obj.tile.step(direction, 2)
@@ -88,7 +95,8 @@ class GnomeStrongholdCoursePlugin : PluginEvent() {
             option = "squeeze-through",
             animation = "sequences.agility_pipe",
             experience = 7.5,
-            clientDuration = 54,
+            clientDuration1 = 54,
+            clientDuration2 = 54,
             destination = { player, obj ->
                 val direction = if (player.tile.x <= obj.tile.x) Direction.EAST else Direction.WEST
                 obj.tile.step(direction, 3)
@@ -127,15 +135,15 @@ class GnomeStrongholdCoursePlugin : PluginEvent() {
 
     private fun handleObstacle(player: Player, obj: GameObject, obstacle: CourseObstacle) {
         player.queue {
-            val destination = obstacle.destination(player, obj)
+            val destination = obstacle.endTile ?: obstacle.destination(player, obj)
             val direction = if (obstacle == obstacles.first()) Direction.SOUTH else Direction.between(player.tile, destination)
             player.faceTile(obj.tile)
             player.animate(obstacle.animation)
             val movement = ForcedMovement.of(
                 src = player.tile,
                 dst = destination,
-                clientDuration1 = obstacle.clientDuration,
-                clientDuration2 = obstacle.clientDuration,
+                clientDuration1 = obstacle.clientDuration1,
+                clientDuration2 = obstacle.clientDuration2,
                 directionAngle = direction.angle,
             )
             player.forceMove(this, movement)
@@ -148,7 +156,9 @@ class GnomeStrongholdCoursePlugin : PluginEvent() {
         val option: String,
         val animation: String,
         val experience: Double,
-        val clientDuration: Int,
+        val clientDuration1: Int,
+        val clientDuration2: Int,
+        val endTile: Tile? = null,
         val destination: (Player, GameObject) -> Tile,
     )
 }
