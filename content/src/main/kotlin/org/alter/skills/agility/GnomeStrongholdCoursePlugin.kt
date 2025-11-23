@@ -11,6 +11,7 @@ import org.alter.game.model.ForcedMovement
 import org.alter.game.model.Tile
 import org.alter.game.model.entity.GameObject
 import org.alter.game.model.entity.Player
+import org.alter.game.model.move.MovementQueue
 import org.alter.game.pluginnew.PluginEvent
 import org.alter.game.pluginnew.event.impl.onObjectOption
 
@@ -38,6 +39,7 @@ class GnomeStrongholdCoursePlugin : PluginEvent() {
             clientDuration2 = 60,
             endTile = Tile(x = 2474, z = 3429, height = 0),
             destination = { _, obj -> obj.tile.step(Direction.SOUTH, 7) },
+            movementType = MovementType.FORCED_WALK,
         ),
         CourseObstacle(
             objectId = "objects.agility_gnome_net_up",
@@ -138,15 +140,26 @@ class GnomeStrongholdCoursePlugin : PluginEvent() {
             val destination = obstacle.endTile ?: obstacle.destination(player, obj)
             val direction = if (obstacle == obstacles.first()) Direction.SOUTH else Direction.between(player.tile, destination)
             player.faceTile(obj.tile)
-            player.animate(obstacle.animation)
-            val movement = ForcedMovement.of(
-                src = player.tile,
-                dst = destination,
-                clientDuration1 = obstacle.clientDuration1,
-                clientDuration2 = obstacle.clientDuration2,
-                directionAngle = direction.angle,
-            )
-            player.forceMove(this, movement)
+            when (obstacle.movementType) {
+                MovementType.FORCED_WALK -> {
+                    val distance = player.tile.getDistance(destination)
+                    player.animate(obstacle.animation)
+                    player.walkTo(destination, MovementQueue.StepType.FORCED_WALK)
+                    wait(distance + 1)
+                }
+
+                MovementType.FORCED_MOVEMENT -> {
+                    player.animate(obstacle.animation)
+                    val movement = ForcedMovement.of(
+                        src = player.tile,
+                        dst = destination,
+                        clientDuration1 = obstacle.clientDuration1,
+                        clientDuration2 = obstacle.clientDuration2,
+                        directionAngle = direction.angle,
+                    )
+                    player.forceMove(this, movement)
+                }
+            }
             player.addXp(Skills.AGILITY, obstacle.experience)
         }
     }
@@ -160,5 +173,11 @@ class GnomeStrongholdCoursePlugin : PluginEvent() {
         val clientDuration2: Int,
         val endTile: Tile? = null,
         val destination: (Player, GameObject) -> Tile,
+        val movementType: MovementType = MovementType.FORCED_MOVEMENT,
     )
+
+    private enum class MovementType {
+        FORCED_WALK,
+        FORCED_MOVEMENT,
+    }
 }
