@@ -4,8 +4,11 @@ import org.alter.api.Skills
 import org.alter.api.ext.getInteractingGameObj
 import org.alter.api.ext.getVarbit
 import org.alter.api.ext.getVarp
+import org.alter.api.ext.loopAnim
 import org.alter.api.ext.setVarbit
 import org.alter.api.ext.setVarp
+import org.alter.api.ext.stopLoopAnim
+import org.alter.api.ext.filterableMessage
 import org.alter.game.model.Direction
 import org.alter.game.model.ForcedMovement
 import org.alter.game.model.Tile
@@ -20,9 +23,9 @@ class GnomeStrongholdCoursePlugin : PluginEvent() {
     private companion object {
         private const val AGILITY_HELPER_TEMP_VARP = "varp.helper_agility_vars"
         private const val AGILITY_HELPER_PERM_VARP = "varp.helper_agility_vars_perm"
-        private const val AGILITY_HELPER_CURRENT_COURSE_VARBIT = "varbit.helper_agility_current_course"
-        private const val AGILITY_HELPER_HIGHLIGHTED_COURSE_VARBIT = "varbit.helper_agility_highlighted_course"
-        private const val AGILITY_HELPER_HIGHLIGHTED_COURSE_REMEMBER_VARBIT = "varbit.helper_agility_highlighted_course_remember"
+        private const val AGILITY_HELPER_CURRENT_COURSE_VARBIT = "varbits.helper_agility_current_course"
+        private const val AGILITY_HELPER_HIGHLIGHTED_COURSE_VARBIT = "varbits.helper_agility_highlighted_course"
+        private const val AGILITY_HELPER_HIGHLIGHTED_COURSE_REMEMBER_VARBIT = "varbits.helper_agility_highlighted_course_remember"
 
         private const val GNOME_STRONGHOLD_COURSE_ID = 0
         private const val GNOME_STRONGHOLD_HELPER_TEMP_VALUE = 24608
@@ -40,6 +43,9 @@ class GnomeStrongholdCoursePlugin : PluginEvent() {
             endTile = Tile(x = 2474, z = 3429, height = 0),
             destination = { _, obj -> obj.tile.step(Direction.SOUTH, 7) },
             movementType = MovementType.FORCED_WALK,
+            loopAnimation = true,
+            startMessage = "You walk carefully across the slippery log...",
+            endMessage = "... and make it safely to the other side.",
         ),
         CourseObstacle(
             objectId = "objects.agility_gnome_net_up",
@@ -143,9 +149,12 @@ class GnomeStrongholdCoursePlugin : PluginEvent() {
             when (obstacle.movementType) {
                 MovementType.FORCED_WALK -> {
                     val distance = player.tile.getDistance(destination)
-                    player.animate(obstacle.animation)
+                    obstacle.startMessage?.let(player::filterableMessage)
+                    if (obstacle.loopAnimation) player.loopAnim(obstacle.animation) else player.animate(obstacle.animation)
                     player.forceWalkStraight(destination, direction)
-                    wait(distance + 1)
+                    wait(distance + 2)
+                    if (obstacle.loopAnimation) player.stopLoopAnim()
+                    obstacle.endMessage?.let(player::filterableMessage)
                 }
 
                 MovementType.FORCED_MOVEMENT -> {
@@ -174,6 +183,9 @@ class GnomeStrongholdCoursePlugin : PluginEvent() {
         val endTile: Tile? = null,
         val destination: (Player, GameObject) -> Tile,
         val movementType: MovementType = MovementType.FORCED_MOVEMENT,
+        val loopAnimation: Boolean = false,
+        val startMessage: String? = null,
+        val endMessage: String? = null,
     )
 
     private enum class MovementType {
