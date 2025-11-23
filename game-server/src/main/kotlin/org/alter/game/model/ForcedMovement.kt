@@ -19,20 +19,20 @@ data class ForcedMovement internal constructor(
     internal val diffX1: Int
         get() {
             val dst = destinations[0]
-            return initialTile.x - dst.x
+            return dst.x - initialTile.x
         }
 
     internal val diffZ1: Int
         get() {
             val dst = destinations[0]
-            return initialTile.z - dst.z
+            return dst.z - initialTile.z
         }
 
     internal val diffX2: Int
         get() {
             if (destinations.size >= 2) {
                 val dst = destinations[1]
-                return initialTile.x - dst.x
+                return dst.x - initialTile.x
             }
             return 0
         }
@@ -41,7 +41,7 @@ data class ForcedMovement internal constructor(
         get() {
             if (destinations.size >= 2) {
                 val dst = destinations[1]
-                return initialTile.z - dst.z
+                return dst.z - initialTile.z
             }
             return 0
         }
