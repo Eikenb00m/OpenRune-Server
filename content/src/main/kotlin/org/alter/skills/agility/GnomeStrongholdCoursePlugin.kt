@@ -8,7 +8,6 @@ import org.alter.api.ext.stopLoopAnim
 import org.alter.game.model.Tile
 import org.alter.game.model.entity.Player
 import org.alter.game.model.move.MovementQueue
-import org.alter.game.model.move.walkTo
 import org.alter.game.pluginnew.PluginEvent
 import org.alter.game.pluginnew.event.impl.onObjectOption
 
@@ -26,15 +25,19 @@ class GnomeStrongholdCoursePlugin : PluginEvent() {
         onObjectOption(LOG_BALANCE_ID, "walk-across") {
             val distance = player.tile.getDistance(LOG_DESTINATION)
             player.queue {
-                player.filterableMessage("You walk carefully across the slippery log...")
-                player.loopAnim("sequences.human_walk_logbalance")
-                player.walkTo(LOG_DESTINATION, MovementQueue.StepType.FORCED_WALK, detectCollision = false)
-                player.lock()
-                wait(distance + 2)
-                player.stopLoopAnim()
-                player.filterableMessage("... and make it safely to the other side.")
-                player.addXp(Skills.AGILITY, LOG_BALANCE_XP)
-                player.unlock()
+                try {
+                    player.lock()
+                    player.filterableMessage("You walk carefully across the slippery log...")
+                    player.loopAnim("sequences.human_walk_logbalance")
+                    player.movementQueue.clear()
+                    player.movementQueue.addStep(LOG_DESTINATION, MovementQueue.StepType.FORCED_WALK)
+                    wait(distance + 2)
+                    player.stopLoopAnim()
+                    player.filterableMessage("... and make it safely to the other side.")
+                    player.addXp(Skills.AGILITY, LOG_BALANCE_XP)
+                } finally {
+                    player.unlock()
+                }
             }
         }
     }
