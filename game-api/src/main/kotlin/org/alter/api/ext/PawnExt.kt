@@ -5,6 +5,8 @@ import org.alter.api.BonusSlot
 import org.alter.api.HitType
 import org.alter.api.HitbarType
 import org.alter.api.PrayerIcon
+import org.alter.game.info.PlayerInfo
+import org.alter.game.model.AnimationSet
 import org.alter.game.model.Hit
 import org.alter.game.model.attr.*
 import org.alter.game.model.entity.GameObject
@@ -132,4 +134,35 @@ fun Pawn.loopAnim(animId: String) {
 fun Pawn.stopLoopAnim() {
     attr.remove(LOOPING_ANIMATION_ATTR)
     animate(RSCM.NONE)
+}
+
+fun Player.pushRenderAnim(animId: String) {
+    val render = animId.asRSCM()
+    val renderAnimation = AnimationSet(
+        readyAnim = render,
+        turnAnim = render,
+        walkAnim = render,
+        walkAnimBack = render,
+        walkAnimLeft = render,
+        walkAnimRight = render,
+        runAnim = render,
+    )
+
+    if (!attr.has(CUSTOM_RENDER_ANIMATION)) {
+        attr[CUSTOM_RENDER_ANIMATION] = PlayerInfo(this).animSequance
+    }
+
+    PlayerInfo(this).apply {
+        animSequance = renderAnimation
+        syncAnimationSet()
+    }
+}
+
+fun Player.popRenderAnim() {
+    val previous = attr.remove(CUSTOM_RENDER_ANIMATION) ?: return
+
+    PlayerInfo(this).apply {
+        animSequance = previous
+        syncAnimationSet()
+    }
 }

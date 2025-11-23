@@ -1,5 +1,6 @@
 package org.alter.game.model.attr
 
+import org.alter.game.model.AnimationSet
 import org.alter.game.model.container.ItemTransaction
 import org.alter.game.model.entity.*
 import org.alter.game.model.item.Item
@@ -260,3 +261,8 @@ val CHANGE_LOGGING = AttributeKey<Boolean>()
  * Instead of running tp
  */
 val CLIENT_KEY_COMBINATION = AttributeKey<Int>()
+
+/**
+ * Stores a temporarily overridden render animation set so it can be restored.
+ */
+val CUSTOM_RENDER_ANIMATION = AttributeKey<AnimationSet>()
