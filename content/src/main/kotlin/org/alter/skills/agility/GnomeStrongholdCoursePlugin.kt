@@ -2,6 +2,10 @@ package org.alter.skills.agility
 
 import org.alter.api.Skills
 import org.alter.api.ext.getInteractingGameObj
+import org.alter.api.ext.getVarbit
+import org.alter.api.ext.getVarp
+import org.alter.api.ext.setVarbit
+import org.alter.api.ext.setVarp
 import org.alter.game.model.Direction
 import org.alter.game.model.ForcedMovement
 import org.alter.game.model.Tile
@@ -11,6 +15,18 @@ import org.alter.game.pluginnew.PluginEvent
 import org.alter.game.pluginnew.event.impl.onObjectOption
 
 class GnomeStrongholdCoursePlugin : PluginEvent() {
+
+    private companion object {
+        private const val AGILITY_HELPER_TEMP_VARP = "varp.helper_agility_vars"
+        private const val AGILITY_HELPER_PERM_VARP = "varp.helper_agility_vars_perm"
+        private const val AGILITY_HELPER_CURRENT_COURSE_VARBIT = "varbit.helper_agility_current_course"
+        private const val AGILITY_HELPER_HIGHLIGHTED_COURSE_VARBIT = "varbit.helper_agility_highlighted_course"
+        private const val AGILITY_HELPER_HIGHLIGHTED_COURSE_REMEMBER_VARBIT = "varbit.helper_agility_highlighted_course_remember"
+
+        private const val GNOME_STRONGHOLD_COURSE_ID = 0
+        private const val GNOME_STRONGHOLD_HELPER_TEMP_VALUE = 24608
+        private const val AGILITY_HELPER_PERM_ENABLED = 2
+    }
 
     private val obstacles = listOf(
         CourseObstacle(
@@ -87,8 +103,28 @@ class GnomeStrongholdCoursePlugin : PluginEvent() {
         obstacles.forEach { obstacle ->
             onObjectOption(obstacle.objectId, obstacle.option) {
                 val gameObject = player.getInteractingGameObj() ?: return@onObjectOption
+                syncAgilityHelperVars(player)
                 handleObstacle(player, gameObject, obstacle)
             }
+        }
+    }
+
+    private fun syncAgilityHelperVars(player: Player) {
+        if (player.getVarp(AGILITY_HELPER_PERM_VARP) != AGILITY_HELPER_PERM_ENABLED) {
+            player.setVarp(AGILITY_HELPER_PERM_VARP, AGILITY_HELPER_PERM_ENABLED)
+        }
+        if (player.getVarp(AGILITY_HELPER_TEMP_VARP) != GNOME_STRONGHOLD_HELPER_TEMP_VALUE) {
+            player.setVarp(AGILITY_HELPER_TEMP_VARP, GNOME_STRONGHOLD_HELPER_TEMP_VALUE)
+        }
+
+        if (player.getVarbit(AGILITY_HELPER_CURRENT_COURSE_VARBIT) != GNOME_STRONGHOLD_COURSE_ID) {
+            player.setVarbit(AGILITY_HELPER_CURRENT_COURSE_VARBIT, GNOME_STRONGHOLD_COURSE_ID)
+        }
+        if (player.getVarbit(AGILITY_HELPER_HIGHLIGHTED_COURSE_VARBIT) != GNOME_STRONGHOLD_COURSE_ID) {
+            player.setVarbit(AGILITY_HELPER_HIGHLIGHTED_COURSE_VARBIT, GNOME_STRONGHOLD_COURSE_ID)
+        }
+        if (player.getVarbit(AGILITY_HELPER_HIGHLIGHTED_COURSE_REMEMBER_VARBIT) != GNOME_STRONGHOLD_COURSE_ID) {
+            player.setVarbit(AGILITY_HELPER_HIGHLIGHTED_COURSE_REMEMBER_VARBIT, GNOME_STRONGHOLD_COURSE_ID)
         }
     }
 
