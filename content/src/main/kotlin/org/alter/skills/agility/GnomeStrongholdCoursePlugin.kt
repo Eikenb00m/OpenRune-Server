@@ -144,7 +144,7 @@ class GnomeStrongholdCoursePlugin : PluginEvent() {
                 MovementType.FORCED_WALK -> {
                     val distance = player.tile.getDistance(destination)
                     player.animate(obstacle.animation)
-                    player.walkTo(destination, MovementQueue.StepType.FORCED_WALK)
+                    player.forceWalkStraight(destination, direction)
                     wait(distance + 1)
                 }
 
@@ -179,5 +179,14 @@ class GnomeStrongholdCoursePlugin : PluginEvent() {
     private enum class MovementType {
         FORCED_WALK,
         FORCED_MOVEMENT,
+    }
+
+    private fun Player.forceWalkStraight(destination: Tile, direction: Direction) {
+        movementQueue.clear()
+        var current = tile
+        while (current != destination) {
+            current = current.step(direction, 1)
+            movementQueue.addStep(current, MovementQueue.StepType.FORCED_WALK)
+        }
     }
 }
