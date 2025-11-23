@@ -159,7 +159,8 @@ fun Player.pushRenderAnim(animId: String) {
 }
 
 fun Player.popRenderAnim() {
-    val previous = attr.remove(CUSTOM_RENDER_ANIMATION) ?: return
+    val previous = attr[CUSTOM_RENDER_ANIMATION] ?: return
+    attr.remove(CUSTOM_RENDER_ANIMATION)
 
     PlayerInfo(this).apply {
         animSequance = previous
