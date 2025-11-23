@@ -106,8 +106,9 @@ class MovementQueue(val pawn: Pawn) {
             var walkDirection: Direction?
             var runDirection: Direction? = null
             walkDirection = Direction.between(tile, next.tile)
+            val ignoreCollision = next.type != StepType.NORMAL
             if (walkDirection != Direction.NONE &&
-                (pawn.world.canTraverse(tile, walkDirection, pawn))
+                (ignoreCollision || pawn.world.canTraverse(tile, walkDirection, pawn))
             ) {
                 tile = next.tile
                 pawn.lastFacingDirection = walkDirection
@@ -121,7 +122,8 @@ class MovementQueue(val pawn: Pawn) {
                     next = steps.poll()
                     if (next != null) {
                         runDirection = Direction.between(tile, next.tile)
-                        if (pawn.world.canTraverse(tile, runDirection, pawn)) {
+                        val ignoreRunCollision = next.type != StepType.NORMAL
+                        if (ignoreRunCollision || pawn.world.canTraverse(tile, runDirection, pawn)) {
                             tile = next.tile
                             pawn.lastFacingDirection = runDirection
                         } else {
