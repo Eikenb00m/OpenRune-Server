@@ -30,15 +30,12 @@ class GnomeStrongholdCoursePlugin : PluginEvent() {
 
     private val obstacles = listOf(
         CourseObstacle(
-            objectId = "objects.agility_gnome_log",
+            objectId = "objects.gnome_log_balance1",
             option = "walk-across",
-            animation = "sequences.agility_log_balance",
+            animation = "sequences.human_walk_logbalance",
             experience = 7.5,
             clientDuration = 60,
-            destination = { player, obj ->
-                val direction = if (player.tile.x <= obj.tile.x) Direction.EAST else Direction.WEST
-                obj.tile.step(direction, 7)
-            },
+            destination = { _, obj -> obj.tile.step(Direction.SOUTH, 7) },
         ),
         CourseObstacle(
             objectId = "objects.agility_gnome_net_up",
@@ -131,7 +128,7 @@ class GnomeStrongholdCoursePlugin : PluginEvent() {
     private fun handleObstacle(player: Player, obj: GameObject, obstacle: CourseObstacle) {
         player.queue {
             val destination = obstacle.destination(player, obj)
-            val direction = Direction.between(player.tile, destination)
+            val direction = if (obstacle == obstacles.first()) Direction.SOUTH else Direction.between(player.tile, destination)
             player.faceTile(obj.tile)
             player.animate(obstacle.animation)
             val movement = ForcedMovement.of(
