@@ -10,8 +10,6 @@ import org.alter.api.ext.stopLoopAnim
 import org.alter.game.model.Direction
 import org.alter.game.model.ForcedMovement
 import org.alter.game.model.Tile
-import org.alter.game.model.attr.ADVANCED_GNOME_AGILITY_STAGE
-import org.alter.game.model.attr.GNOME_AGILITY_STAGE
 import org.alter.game.model.entity.Player
 import org.alter.game.model.move.MovementQueue
 import org.alter.game.model.move.walkTo
@@ -35,8 +33,6 @@ class GnomeStrongholdCoursePlugin : PluginEvent() {
         private const val ROPE_XP = 7.5
         private const val BRANCH_DOWN_XP = 5.0
         private const val PIPE_XP = 7.5
-        private const val COMPLETION_BONUS_XP = 39.0
-        private const val ADVANCED_COMPLETION_BONUS_XP = 605.0
 
         private val LOG_DESTINATION = Tile(2474, 3429, 0)
     }
@@ -56,8 +52,6 @@ class GnomeStrongholdCoursePlugin : PluginEvent() {
                 player.stopLoopAnim()
                 player.filterableMessage("... and make it safely to the other side.")
                 player.addXp(Skills.AGILITY, LOG_BALANCE_XP)
-                player.setGnomeAgilityStage(1)
-                player.setAdvancedGnomeAgilityStage(1)
                 player.unlock()
             }
         }
@@ -73,8 +67,6 @@ class GnomeStrongholdCoursePlugin : PluginEvent() {
                 wait(distance)
                 player.moveTo(destination)
                 player.addXp(Skills.AGILITY, NET_XP)
-                player.advanceGnomeStage(2)
-                player.advanceAdvancedGnomeStage(2)
                 player.unlock()
             }
         }
@@ -91,8 +83,6 @@ class GnomeStrongholdCoursePlugin : PluginEvent() {
                 player.moveTo(destination)
                 player.addXp(Skills.AGILITY, BRANCH_UP_XP)
                 player.filterableMessage("... to the platform above.")
-                player.advanceGnomeStage(3)
-                player.advanceAdvancedGnomeStage(3)
                 player.unlock()
             }
         }
@@ -111,7 +101,6 @@ class GnomeStrongholdCoursePlugin : PluginEvent() {
                 player.stopLoopAnim()
                 player.addXp(Skills.AGILITY, ROPE_XP)
                 player.filterableMessage("... to the next platform.")
-                player.advanceGnomeStage(4)
                 player.unlock()
             }
         }
@@ -128,7 +117,6 @@ class GnomeStrongholdCoursePlugin : PluginEvent() {
                 player.moveTo(destination)
                 player.addXp(Skills.AGILITY, BRANCH_DOWN_XP)
                 player.filterableMessage("You land on the ground.")
-                player.advanceGnomeStage(5)
                 player.unlock()
             }
         }
@@ -148,7 +136,6 @@ class GnomeStrongholdCoursePlugin : PluginEvent() {
                 wait(distance)
                 player.moveTo(destination)
                 player.addXp(Skills.AGILITY, NET_XP)
-                player.advanceGnomeStage(6)
                 player.unlock()
             }
         }
@@ -197,58 +184,10 @@ class GnomeStrongholdCoursePlugin : PluginEvent() {
                         directionAngle = Direction.NORTH.angle,
                     )
                     player.forceMove(this, thirdMovement)
-                    val stage = player.getGnomeAgilityStage()
-                    if (stage == 6) {
-                        player.addXp(Skills.AGILITY, PIPE_XP + COMPLETION_BONUS_XP)
-                        player.setGnomeAgilityStage(0)
-                    } else {
-                        player.addXp(Skills.AGILITY, PIPE_XP)
-                    }
-                    if (player.getAdvancedGnomeAgilityStage() == 6) {
-                        player.addXp(Skills.AGILITY, ADVANCED_COMPLETION_BONUS_XP)
-                        player.setAdvancedGnomeAgilityStage(0)
-                    }
+                    player.addXp(Skills.AGILITY, PIPE_XP)
                     player.unlock()
                 }
             }
         }
-    }
-}
-
-private fun Player.getGnomeAgilityStage(): Int {
-    val stage = attr[GNOME_AGILITY_STAGE]
-    if (stage == null) {
-        setGnomeAgilityStage(0)
-        return getGnomeAgilityStage()
-    }
-    return stage
-}
-
-private fun Player.getAdvancedGnomeAgilityStage(): Int {
-    val stage = attr[ADVANCED_GNOME_AGILITY_STAGE]
-    if (stage == null) {
-        setAdvancedGnomeAgilityStage(0)
-        return getAdvancedGnomeAgilityStage()
-    }
-    return stage
-}
-
-private fun Player.setGnomeAgilityStage(stage: Int) {
-    attr[GNOME_AGILITY_STAGE] = stage
-}
-
-private fun Player.setAdvancedGnomeAgilityStage(stage: Int) {
-    attr[ADVANCED_GNOME_AGILITY_STAGE] = stage
-}
-
-private fun Player.advanceGnomeStage(nextStage: Int) {
-    if (getGnomeAgilityStage() + 1 == nextStage) {
-        setGnomeAgilityStage(nextStage)
-    }
-}
-
-private fun Player.advanceAdvancedGnomeStage(nextStage: Int) {
-    if (getAdvancedGnomeAgilityStage() + 1 == nextStage) {
-        setAdvancedGnomeAgilityStage(nextStage)
     }
 }
