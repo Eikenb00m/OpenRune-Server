@@ -14,7 +14,8 @@ import org.alter.game.model.ForcedMovement
 import org.alter.game.model.Tile
 import org.alter.game.model.entity.GameObject
 import org.alter.game.model.entity.Player
-import org.alter.game.model.move.MovementQueue
+import org.alter.game.model.move.moveTo
+import org.alter.game.model.queue.QueueTask
 import org.alter.game.pluginnew.PluginEvent
 import org.alter.game.pluginnew.event.impl.onObjectOption
 
@@ -152,8 +153,8 @@ class GnomeStrongholdCoursePlugin : PluginEvent() {
                     val distance = player.tile.getDistance(destination)
                     obstacle.startMessage?.let(player::filterableMessage)
                     if (obstacle.loopAnimation) player.loopAnim(obstacle.animation) else player.animate(obstacle.animation)
-                    player.forceWalkStraight(destination, direction)
-                    wait(distance + 2)
+                    player.faceDirection(direction)
+                    player.walkManually(destination, direction, distance)
                     if (obstacle.loopAnimation) player.stopLoopAnim()
                     obstacle.endMessage?.let(player::filterableMessage)
                 }
@@ -195,12 +196,14 @@ class GnomeStrongholdCoursePlugin : PluginEvent() {
         FORCED_MOVEMENT,
     }
 
-    private fun Player.forceWalkStraight(destination: Tile, direction: Direction) {
-        movementQueue.clear()
-        var current = tile
-        while (current != destination) {
-            current = current.step(direction, 1)
-            movementQueue.addStep(current, MovementQueue.StepType.FORCED_WALK)
+    private suspend fun QueueTask.walkManually(player: Player, destination: Tile, direction: Direction, steps: Int) {
+        repeat(steps) {
+            wait(1)
+            player.moveTo(player.tile.step(direction, 1))
+        }
+        wait(1)
+        if (player.tile != destination) {
+            player.moveTo(destination)
         }
     }
 }
