@@ -36,7 +36,7 @@ class GnomeStrongholdCoursePlugin : PluginEvent() {
             experience = 7.5,
             clientDuration1 = 60,
             clientDuration2 = 60,
-            endTile = Tile(x = 2474, y = 3429, z = 0),
+            endTile = Tile(x = 2474, z = 3429, height = 0),
             destination = { _, obj -> obj.tile.step(Direction.SOUTH, 7) },
         ),
         CourseObstacle(
