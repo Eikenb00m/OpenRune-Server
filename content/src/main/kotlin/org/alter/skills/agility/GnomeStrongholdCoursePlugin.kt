@@ -14,8 +14,8 @@ import org.alter.game.model.ForcedMovement
 import org.alter.game.model.Tile
 import org.alter.game.model.entity.GameObject
 import org.alter.game.model.entity.Player
+import org.alter.game.model.move.MovementQueue
 import org.alter.game.model.move.moveTo
-import org.alter.game.model.queue.QueueTask
 import org.alter.game.pluginnew.PluginEvent
 import org.alter.game.pluginnew.event.impl.onObjectOption
 
@@ -154,7 +154,12 @@ class GnomeStrongholdCoursePlugin : PluginEvent() {
                     obstacle.startMessage?.let(player::filterableMessage)
                     if (obstacle.loopAnimation) player.loopAnim(obstacle.animation) else player.animate(obstacle.animation)
                     player.faceDirection(direction)
-                    player.walkManually(player, destination, direction, distance)
+                    player.movementQueue.clear()
+                    player.movementQueue.addStep(destination, MovementQueue.StepType.FORCED_WALK)
+                    wait(distance + 2)
+                    if (player.tile != destination) {
+                        player.moveTo(destination)
+                    }
                     if (obstacle.loopAnimation) player.stopLoopAnim()
                     obstacle.endMessage?.let(player::filterableMessage)
                 }
@@ -196,14 +201,4 @@ class GnomeStrongholdCoursePlugin : PluginEvent() {
         FORCED_MOVEMENT,
     }
 
-    private suspend fun QueueTask.walkManually(player: Player, destination: Tile, direction: Direction, steps: Int) {
-        repeat(steps) {
-            wait(1)
-            player.moveTo(player.tile.step(direction, 1))
-        }
-        wait(1)
-        if (player.tile != destination) {
-            player.moveTo(destination)
-        }
-    }
 }
