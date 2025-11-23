@@ -154,7 +154,7 @@ class GnomeStrongholdCoursePlugin : PluginEvent() {
                     obstacle.startMessage?.let(player::filterableMessage)
                     if (obstacle.loopAnimation) player.loopAnim(obstacle.animation) else player.animate(obstacle.animation)
                     player.faceDirection(direction)
-                    player.walkManually(destination, direction, distance)
+                    player.walkManually(player, destination, direction, distance)
                     if (obstacle.loopAnimation) player.stopLoopAnim()
                     obstacle.endMessage?.let(player::filterableMessage)
                 }
