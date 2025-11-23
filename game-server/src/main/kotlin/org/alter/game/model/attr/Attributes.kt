@@ -49,6 +49,16 @@ val FREE_BOND_CLAIMED_ATTR = AttributeKey<String>("bond_claimed")
 val PLAYTIME_ATTR = AttributeKey<Int>(persistenceKey = "playtime")
 
 /**
+ * Tracks the current stage of the basic Gnome Stronghold agility course run.
+ */
+val GNOME_AGILITY_STAGE = AttributeKey<Int>(persistenceKey = "gnome_agility_stage")
+
+/**
+ * Tracks the current stage of the advanced Gnome Stronghold agility course run.
+ */
+val ADVANCED_GNOME_AGILITY_STAGE = AttributeKey<Int>(persistenceKey = "advanced_gnome_agility_stage")
+
+/**
  * A flag which indicates if the player's appearance has been set by the player.
  * Opting for persistence and modifying on_login behavior this will allow OSRS-like
  * behavior such that player can logout and will still be allowed to set appearance

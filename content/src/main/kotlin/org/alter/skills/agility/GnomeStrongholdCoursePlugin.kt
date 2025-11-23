@@ -1,204 +1,254 @@
 package org.alter.skills.agility
 
 import org.alter.api.Skills
-import org.alter.api.ext.getInteractingGameObj
-import org.alter.api.ext.getVarbit
-import org.alter.api.ext.getVarp
-import org.alter.api.ext.loopAnim
-import org.alter.api.ext.setVarbit
-import org.alter.api.ext.setVarp
-import org.alter.api.ext.stopLoopAnim
+import org.alter.api.ext.addXp
+import org.alter.api.ext.animate
 import org.alter.api.ext.filterableMessage
+import org.alter.api.ext.getInteractingGameObj
+import org.alter.api.ext.loopAnim
+import org.alter.api.ext.stopLoopAnim
 import org.alter.game.model.Direction
 import org.alter.game.model.ForcedMovement
 import org.alter.game.model.Tile
-import org.alter.game.model.entity.GameObject
+import org.alter.game.model.attr.ADVANCED_GNOME_AGILITY_STAGE
+import org.alter.game.model.attr.GNOME_AGILITY_STAGE
 import org.alter.game.model.entity.Player
 import org.alter.game.model.move.MovementQueue
-import org.alter.game.model.move.moveTo
+import org.alter.game.model.move.walkTo
 import org.alter.game.pluginnew.PluginEvent
 import org.alter.game.pluginnew.event.impl.onObjectOption
 
 class GnomeStrongholdCoursePlugin : PluginEvent() {
 
     private companion object {
-        private const val AGILITY_HELPER_TEMP_VARP = "varp.helper_agility_vars"
-        private const val AGILITY_HELPER_PERM_VARP = "varp.helper_agility_vars_perm"
-        private const val AGILITY_HELPER_CURRENT_COURSE_VARBIT = "varbits.helper_agility_current_course"
-        private const val AGILITY_HELPER_HIGHLIGHTED_COURSE_VARBIT = "varbits.helper_agility_highlighted_course"
-        private const val AGILITY_HELPER_HIGHLIGHTED_COURSE_REMEMBER_VARBIT = "varbits.helper_agility_highlighted_course_remember"
+        private const val LOG_BALANCE_ID = 23145
+        private const val OBSTACLE_NET_UP_ID = 23134
+        private const val TREE_BRANCH_UP_ID = 23559
+        private const val BALANCING_ROPE_ID = 23557
+        private const val TREE_BRANCH_DOWN_ID = 23560
+        private const val OBSTACLE_NET_DOWN_ID = 23133
+        private val PIPE_IDS = intArrayOf(23138, 23139)
 
-        private const val GNOME_STRONGHOLD_COURSE_ID = 0
-        private const val GNOME_STRONGHOLD_HELPER_TEMP_VALUE = 24608
-        private const val AGILITY_HELPER_PERM_ENABLED = 2
+        private const val LOG_BALANCE_XP = 7.5
+        private const val NET_XP = 7.5
+        private const val BRANCH_UP_XP = 5.0
+        private const val ROPE_XP = 7.5
+        private const val BRANCH_DOWN_XP = 5.0
+        private const val PIPE_XP = 7.5
+        private const val COMPLETION_BONUS_XP = 39.0
+        private const val ADVANCED_COMPLETION_BONUS_XP = 605.0
+
+        private val LOG_DESTINATION = Tile(2474, 3429, 0)
     }
-
-    private val obstacles = listOf(
-        CourseObstacle(
-            objectId = "objects.gnome_log_balance1",
-            option = "walk-across",
-            animation = "sequences.human_walk_logbalance",
-            experience = 7.5,
-            clientDuration1 = 60,
-            clientDuration2 = 60,
-            endTile = Tile(x = 2474, z = 3429, height = 0),
-            destination = { _, obj -> obj.tile.step(Direction.SOUTH, 7) },
-            movementType = MovementType.FORCED_WALK,
-            loopAnimation = true,
-            startMessage = "You walk carefully across the slippery log...",
-            endMessage = "... and make it safely to the other side.",
-        ),
-        CourseObstacle(
-            objectId = "objects.agility_gnome_net_up",
-            option = "climb-over",
-            animation = "sequences.agility_climb_net",
-            experience = 7.5,
-            clientDuration1 = 45,
-            clientDuration2 = 45,
-            destination = { _, obj -> obj.tile.transform(0, 2, 1) },
-        ),
-        CourseObstacle(
-            objectId = "objects.agility_gnome_branch_up",
-            option = "climb",
-            animation = "sequences.agility_climb_branch",
-            experience = 5.0,
-            clientDuration1 = 30,
-            clientDuration2 = 30,
-            destination = { _, obj -> obj.tile.transform(0, 0, 2) },
-        ),
-        CourseObstacle(
-            objectId = "objects.agility_gnome_rope",
-            option = "walk-on",
-            animation = "sequences.agility_balancing_rope",
-            experience = 7.5,
-            clientDuration1 = 72,
-            clientDuration2 = 72,
-            destination = { player, obj ->
-                val direction = if (player.tile.x <= obj.tile.x) Direction.WEST else Direction.EAST
-                obj.tile.transform(0, 0, 2).step(direction, 6)
-            },
-        ),
-        CourseObstacle(
-            objectId = "objects.agility_gnome_branch_down",
-            option = "climb-down",
-            animation = "sequences.agility_climb_branch",
-            experience = 5.0,
-            clientDuration1 = 30,
-            clientDuration2 = 30,
-            destination = { _, obj -> obj.tile.transform(0, 0, -2) },
-        ),
-        CourseObstacle(
-            objectId = "objects.agility_gnome_net_down",
-            option = "climb-over",
-            animation = "sequences.agility_climb_net",
-            experience = 7.5,
-            clientDuration1 = 45,
-            clientDuration2 = 45,
-            destination = { player, obj ->
-                val direction = if (player.tile.z >= obj.tile.z) Direction.SOUTH else Direction.NORTH
-                obj.tile.step(direction, 2)
-            },
-        ),
-        CourseObstacle(
-            objectId = "objects.agility_gnome_pipe",
-            option = "squeeze-through",
-            animation = "sequences.agility_pipe",
-            experience = 7.5,
-            clientDuration1 = 54,
-            clientDuration2 = 54,
-            destination = { player, obj ->
-                val direction = if (player.tile.x <= obj.tile.x) Direction.EAST else Direction.WEST
-                obj.tile.step(direction, 3)
-            },
-        ),
-    )
 
     override fun init() {
-        obstacles.forEach { obstacle ->
-            onObjectOption(obstacle.objectId, obstacle.option) {
-                val gameObject = player.getInteractingGameObj() ?: return@onObjectOption
-                syncAgilityHelperVars(player)
-                handleObstacle(player, gameObject, obstacle)
+        onObjectOption(LOG_BALANCE_ID, "walk-across") {
+            val distance = player.tile.getDistance(LOG_DESTINATION)
+            player.queue {
+                player.lock()
+                player.filterableMessage("You walk carefully across the slippery log...")
+                player.loopAnim("sequences.human_walk_logbalance")
+                player.faceTile(LOG_DESTINATION)
+                player.movementQueue.clear()
+                player.movementQueue.addStep(LOG_DESTINATION, MovementQueue.StepType.FORCED_WALK)
+                wait(distance + 2)
+                player.moveTo(LOG_DESTINATION)
+                player.stopLoopAnim()
+                player.filterableMessage("... and make it safely to the other side.")
+                player.addXp(Skills.AGILITY, LOG_BALANCE_XP)
+                player.setGnomeAgilityStage(1)
+                player.setAdvancedGnomeAgilityStage(1)
+                player.unlock()
             }
         }
-    }
 
-    private fun syncAgilityHelperVars(player: Player) {
-        if (player.getVarp(AGILITY_HELPER_PERM_VARP) != AGILITY_HELPER_PERM_ENABLED) {
-            player.setVarp(AGILITY_HELPER_PERM_VARP, AGILITY_HELPER_PERM_ENABLED)
-        }
-        if (player.getVarp(AGILITY_HELPER_TEMP_VARP) != GNOME_STRONGHOLD_HELPER_TEMP_VALUE) {
-            player.setVarp(AGILITY_HELPER_TEMP_VARP, GNOME_STRONGHOLD_HELPER_TEMP_VALUE)
+        onObjectOption(OBSTACLE_NET_UP_ID, "climb-over") {
+            val obj = player.getInteractingGameObj() ?: return@onObjectOption
+            val destination = Tile(obj.tile.x, obj.tile.z - 1, 1)
+            val distance = player.tile.getDistance(destination)
+            player.queue {
+                player.lock()
+                player.filterableMessage("You climb the netting...")
+                player.animate("sequences.agility_climb_net")
+                wait(distance)
+                player.moveTo(destination)
+                player.addXp(Skills.AGILITY, NET_XP)
+                player.advanceGnomeStage(2)
+                player.advanceAdvancedGnomeStage(2)
+                player.unlock()
+            }
         }
 
-        if (player.getVarbit(AGILITY_HELPER_CURRENT_COURSE_VARBIT) != GNOME_STRONGHOLD_COURSE_ID) {
-            player.setVarbit(AGILITY_HELPER_CURRENT_COURSE_VARBIT, GNOME_STRONGHOLD_COURSE_ID)
+        onObjectOption(TREE_BRANCH_UP_ID, "climb") {
+            val obj = player.getInteractingGameObj() ?: return@onObjectOption
+            val destination = Tile(obj.tile.x, obj.tile.z - 2, 2)
+            val distance = player.tile.getDistance(destination)
+            player.queue {
+                player.lock()
+                player.filterableMessage("You climb the tree...")
+                player.animate("sequences.agility_climb_branch")
+                wait(distance)
+                player.moveTo(destination)
+                player.addXp(Skills.AGILITY, BRANCH_UP_XP)
+                player.filterableMessage("... to the platform above.")
+                player.advanceGnomeStage(3)
+                player.advanceAdvancedGnomeStage(3)
+                player.unlock()
+            }
         }
-        if (player.getVarbit(AGILITY_HELPER_HIGHLIGHTED_COURSE_VARBIT) != GNOME_STRONGHOLD_COURSE_ID) {
-            player.setVarbit(AGILITY_HELPER_HIGHLIGHTED_COURSE_VARBIT, GNOME_STRONGHOLD_COURSE_ID)
-        }
-        if (player.getVarbit(AGILITY_HELPER_HIGHLIGHTED_COURSE_REMEMBER_VARBIT) != GNOME_STRONGHOLD_COURSE_ID) {
-            player.setVarbit(AGILITY_HELPER_HIGHLIGHTED_COURSE_REMEMBER_VARBIT, GNOME_STRONGHOLD_COURSE_ID)
-        }
-    }
 
-    private fun handleObstacle(player: Player, obj: GameObject, obstacle: CourseObstacle) {
-        player.queue {
-            val destination = obstacle.endTile ?: obstacle.destination(player, obj)
-            val direction = if (obstacle == obstacles.first()) Direction.SOUTH else Direction.between(player.tile, destination)
-            player.faceTile(obj.tile)
-            player.lock()
-            when (obstacle.movementType) {
-                MovementType.FORCED_WALK -> {
-                    val distance = player.tile.getDistance(destination)
-                    obstacle.startMessage?.let(player::filterableMessage)
-                    if (obstacle.loopAnimation) player.loopAnim(obstacle.animation) else player.animate(obstacle.animation)
-                    player.faceDirection(direction)
-                    player.movementQueue.clear()
-                    player.movementQueue.addStep(destination, MovementQueue.StepType.FORCED_WALK)
-                    wait(distance + 2)
-                    if (player.tile != destination) {
-                        player.moveTo(destination)
+        onObjectOption(BALANCING_ROPE_ID, "walk-on") {
+            val obj = player.getInteractingGameObj() ?: return@onObjectOption
+            val destination = Tile(2483, obj.tile.z, 2)
+            val distance = player.tile.getDistance(destination)
+            player.queue {
+                player.lock()
+                player.filterableMessage("You carefully cross the tightrope.")
+                player.loopAnim("sequences.agility_balancing_rope")
+                player.movementQueue.clear()
+                player.movementQueue.addStep(destination, MovementQueue.StepType.FORCED_WALK)
+                wait(distance)
+                player.stopLoopAnim()
+                player.addXp(Skills.AGILITY, ROPE_XP)
+                player.filterableMessage("... to the next platform.")
+                player.advanceGnomeStage(4)
+                player.unlock()
+            }
+        }
+
+        onObjectOption(TREE_BRANCH_DOWN_ID, "climb-down") {
+            val obj = player.getInteractingGameObj() ?: return@onObjectOption
+            val destination = Tile(obj.tile.x, obj.tile.z, 0)
+            val distance = player.tile.height - destination.height
+            player.queue {
+                player.lock()
+                player.filterableMessage("You climb down the tree...")
+                player.animate("sequences.agility_climb_branch")
+                wait(distance)
+                player.moveTo(destination)
+                player.addXp(Skills.AGILITY, BRANCH_DOWN_XP)
+                player.filterableMessage("You land on the ground.")
+                player.advanceGnomeStage(5)
+                player.unlock()
+            }
+        }
+
+        onObjectOption(OBSTACLE_NET_DOWN_ID, "climb-over") {
+            val obj = player.getInteractingGameObj() ?: return@onObjectOption
+            if (player.tile.z >= obj.tile.z) {
+                player.filterableMessage("You can't climb the netting from this side.")
+                return@onObjectOption
+            }
+            val destination = Tile(obj.tile.x, obj.tile.z + 2, 0)
+            val distance = player.tile.getDistance(destination)
+            player.queue {
+                player.lock()
+                player.filterableMessage("You climb the netting...")
+                player.animate("sequences.agility_climb_net")
+                wait(distance)
+                player.moveTo(destination)
+                player.addXp(Skills.AGILITY, NET_XP)
+                player.advanceGnomeStage(6)
+                player.unlock()
+            }
+        }
+
+        PIPE_IDS.forEach { pipeId ->
+            onObjectOption(pipeId, "squeeze-through") {
+                val obj = player.getInteractingGameObj() ?: return@onObjectOption
+                if (player.tile.z > obj.tile.z) {
+                    return@onObjectOption
+                }
+                player.queue {
+                    player.lock()
+                    val pipeStart = Tile(obj.tile.x, obj.tile.z - 1)
+                    if (player.tile != pipeStart) {
+                        val distance = player.tile.getDistance(pipeStart)
+                        player.walkTo(pipeStart)
+                        wait(distance + 2)
+                        player.faceTile(obj.tile)
                     }
-                    if (obstacle.loopAnimation) player.stopLoopAnim()
-                    obstacle.endMessage?.let(player::filterableMessage)
-                }
-
-                MovementType.FORCED_MOVEMENT -> {
-                    player.animate(obstacle.animation)
-                    val movement = ForcedMovement.of(
-                        src = player.tile,
-                        dst = destination,
-                        clientDuration1 = obstacle.clientDuration1,
-                        clientDuration2 = obstacle.clientDuration2,
-                        directionAngle = direction.angle,
+                    player.filterableMessage("You squeeze into the pipe...")
+                    player.animate("sequences.agility_pipe")
+                    val firstMovement = ForcedMovement.of(
+                        player.tile,
+                        Tile(obj.tile.x, obj.tile.z + 2),
+                        clientDuration1 = 10,
+                        clientDuration2 = 70,
+                        directionAngle = Direction.NORTH.angle,
                     )
-                    player.forceMove(this, movement)
+                    wait(2)
+                    player.forceMove(this, firstMovement)
+                    wait(2)
+                    val secondMovement = ForcedMovement.of(
+                        player.tile,
+                        Tile(obj.tile.x, obj.tile.z + 4),
+                        clientDuration1 = 10,
+                        clientDuration2 = 70,
+                        directionAngle = Direction.NORTH.angle,
+                    )
+                    player.forceMove(this, secondMovement)
+                    wait(2)
+                    val thirdMovement = ForcedMovement.of(
+                        player.tile,
+                        Tile(obj.tile.x, obj.tile.z + 6),
+                        clientDuration1 = 20,
+                        clientDuration2 = 70,
+                        directionAngle = Direction.NORTH.angle,
+                    )
+                    player.forceMove(this, thirdMovement)
+                    val stage = player.getGnomeAgilityStage()
+                    if (stage == 6) {
+                        player.addXp(Skills.AGILITY, PIPE_XP + COMPLETION_BONUS_XP)
+                        player.setGnomeAgilityStage(0)
+                    } else {
+                        player.addXp(Skills.AGILITY, PIPE_XP)
+                    }
+                    if (player.getAdvancedGnomeAgilityStage() == 6) {
+                        player.addXp(Skills.AGILITY, ADVANCED_COMPLETION_BONUS_XP)
+                        player.setAdvancedGnomeAgilityStage(0)
+                    }
+                    player.unlock()
                 }
             }
-            player.unlock()
-            player.addXp(Skills.AGILITY, obstacle.experience)
         }
     }
+}
 
-    private data class CourseObstacle(
-        val objectId: String,
-        val option: String,
-        val animation: String,
-        val experience: Double,
-        val clientDuration1: Int,
-        val clientDuration2: Int,
-        val endTile: Tile? = null,
-        val destination: (Player, GameObject) -> Tile,
-        val movementType: MovementType = MovementType.FORCED_MOVEMENT,
-        val loopAnimation: Boolean = false,
-        val startMessage: String? = null,
-        val endMessage: String? = null,
-    )
-
-    private enum class MovementType {
-        FORCED_WALK,
-        FORCED_MOVEMENT,
+private fun Player.getGnomeAgilityStage(): Int {
+    val stage = attr[GNOME_AGILITY_STAGE]
+    if (stage == null) {
+        setGnomeAgilityStage(0)
+        return getGnomeAgilityStage()
     }
+    return stage
+}
 
+private fun Player.getAdvancedGnomeAgilityStage(): Int {
+    val stage = attr[ADVANCED_GNOME_AGILITY_STAGE]
+    if (stage == null) {
+        setAdvancedGnomeAgilityStage(0)
+        return getAdvancedGnomeAgilityStage()
+    }
+    return stage
+}
+
+private fun Player.setGnomeAgilityStage(stage: Int) {
+    attr[GNOME_AGILITY_STAGE] = stage
+}
+
+private fun Player.setAdvancedGnomeAgilityStage(stage: Int) {
+    attr[ADVANCED_GNOME_AGILITY_STAGE] = stage
+}
+
+private fun Player.advanceGnomeStage(nextStage: Int) {
+    if (getGnomeAgilityStage() + 1 == nextStage) {
+        setGnomeAgilityStage(nextStage)
+    }
+}
+
+private fun Player.advanceAdvancedGnomeStage(nextStage: Int) {
+    if (getAdvancedGnomeAgilityStage() + 1 == nextStage) {
+        setAdvancedGnomeAgilityStage(nextStage)
+    }
 }
