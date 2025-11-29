@@ -17,7 +17,7 @@ class GnomeStrongholdCoursePlugin : PluginEvent() {
 
     private val MAX_STAGES = 7
     private val BONUS_XP = 50.0
-    private val DROP_CHANCE = 0.15 // 15% kans per obstacle //100% test
+    private val DROP_CHANCE = 1.0 / 3.0 // 1/3 chance per lap completion
 
     private val MARK_SPAWN_TILES = listOf(
         Tile(2471, 3422, 1),
@@ -221,7 +221,6 @@ class GnomeStrongholdCoursePlugin : PluginEvent() {
             if (xp > 0.0) player.addXp(Skills.AGILITY, xp)
             messageEnd?.let { player.filterableMessage(it) }
 
-            maybeSpawnMark(player)
             handleStage(player, stage, endStage)
         }
     }
@@ -250,6 +249,8 @@ class GnomeStrongholdCoursePlugin : PluginEvent() {
                 player.setLaps(laps)
 
                 player.filterableMessage("Your Gnome Stronghold Agility lap count is: <col=ff0000>$laps</col>.")
+
+                maybeSpawnMark(player)
             }
 
             player.setStage(0)
@@ -258,14 +259,9 @@ class GnomeStrongholdCoursePlugin : PluginEvent() {
         }
     }
     private fun maybeSpawnMark(player: Player) {
-
-        val agilityLevel = player.getSkills().getBaseLevel(Skills.AGILITY)
-        val extraChance = agilityLevel / 200.0 // +0.5% per 10 levels
-
         val rng = Math.random()
-        val totalChance = DROP_CHANCE + extraChance
 
-        if (rng > totalChance) return
+        if (rng > DROP_CHANCE) return
 
         val gracetile = MARK_SPAWN_TILES.random()
         player.world.spawn(
