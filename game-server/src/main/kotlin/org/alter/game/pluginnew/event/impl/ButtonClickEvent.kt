@@ -9,6 +9,7 @@ import org.alter.game.pluginnew.MenuOption
 import org.alter.game.pluginnew.PluginEvent
 import org.alter.game.pluginnew.event.EventListener
 import org.alter.game.pluginnew.event.PlayerEvent
+import org.alter.game.ui.IfSubType
 import org.alter.rscm.RSCM
 import org.alter.rscm.RSCM.asRSCM
 import org.alter.rscm.RSCM.requireRSCM
@@ -41,27 +42,14 @@ data class ButtonClickEvent(
     val option: Int,
     val item: Int,
     val slot: Int,
+    val type : IfSubType,
     override val player: Player
 ) : PlayerEvent(player) {
 
-    init {
-
-        if (item != -1) {
-            val containerType = ContainerType.fromId(component.interfaceId)
-            val menuOption = MenuOption.fromId(option)
-
-            if (containerType != null) {
-                when (menuOption) {
-                    MenuOption.OP7 -> ItemDropEvent(item, slot, containerType, player)
-                    MenuOption.OP10 -> ExamineEvent(item, ExamineEntityType.ITEM, player)
-                    else -> ItemClickEvent(item, slot, menuOption, containerType, player)
-                }.post()
-            }
-        }
-    }
+    val op = MenuOption.fromId(option)
 }
 
-fun PluginEvent.onButton(
+fun PluginEvent.onIfOverlayButton(
     componentID: String,
     action: suspend ButtonClickEvent.() -> Unit
 ): EventListener<ButtonClickEvent> {
@@ -72,3 +60,29 @@ fun PluginEvent.onButton(
     }
 }
 
+fun PluginEvent.onButton(
+    componentID: String,
+    action: suspend ButtonClickEvent.() -> Unit
+): EventListener<ButtonClickEvent> = onIfModalButton(componentID,action)
+
+fun PluginEvent.onIfModalButton(
+    componentID: Int,
+    action: suspend ButtonClickEvent.() -> Unit
+): EventListener<ButtonClickEvent> {
+    return on<ButtonClickEvent> {
+        where { component.combinedId == componentID }
+        then { action(this) }
+    }
+}
+
+
+fun PluginEvent.onIfModalButton(
+    componentID: String,
+    action: suspend ButtonClickEvent.() -> Unit
+): EventListener<ButtonClickEvent> {
+    requireRSCM(RSCMType.COMPONENTS,componentID)
+    return on<ButtonClickEvent> {
+        where { component.combinedId == componentID.asRSCM()}
+        then { action(this) }
+    }
+}

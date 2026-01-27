@@ -1,12 +1,20 @@
 package org.alter.interfaces.skillguide
 
-import org.alter.api.ClientScript
+import dev.openrune.definition.type.widget.IfEvent
 import org.alter.api.CommonClientScripts
 import org.alter.api.InterfaceDestination
+import org.alter.api.Skills
 import org.alter.api.ext.*
+import org.alter.game.model.entity.Player
+import org.alter.game.model.priv.Privilege
 import org.alter.game.pluginnew.PluginEvent
 import org.alter.game.pluginnew.event.impl.ButtonClickEvent
 import org.alter.game.pluginnew.event.impl.onButton
+import org.alter.interfaces.ifCloseModal
+import org.alter.interfaces.ifCloseOverlay
+import org.alter.interfaces.ifOpenMainModal
+import org.alter.interfaces.ifOpenOverlay
+import org.alter.interfaces.ifSetEvents
 import org.generated.tables.StatComponentsRow
 
 class SkillGuidEvents : PluginEvent() {
@@ -17,30 +25,56 @@ class SkillGuidEvents : PluginEvent() {
             on<ButtonClickEvent> {
                 where { component.combinedId == row.component }
                 then {
-
                     if (!player.lock.canInterfaceInteract()) return@then
 
-                    val optionSkillGuide = player.getVarbit("varbits.option_skill_guide")
+                    val isAdmin = world.privileges.isEligible(player.privilege, Privilege.ADMIN_POWER)
 
-                    if (optionSkillGuide == 0) {
-                        player.setVarbit("varbits.skill_guide_subsection", 0)
-                        player.setVarbit("varbits.skill_guide_skill", row.bit)
-                        player.setInterfaceUnderlay(color = -1, transparency = -1)
-                        player.setInterfaceEvents("components.skill_guide:categories", -1, -1,0)
-                        player.openInterface("interfaces.skill_guide", InterfaceDestination.MAIN_SCREEN)
-                    } else {
-                        player.runClientScript(CommonClientScripts.MAIN_MODAL_OPEN, -1, -3)
-                        player.openInterface("interfaces.skill_guide_v2", dest = InterfaceDestination.MAIN_SCREEN, isModal = true)
-                        player.runClientScript(ClientScript("skill_guide_v2_init"), row.bit, 0)
-                        player.setInterfaceEvents("components.skill_guide_v2:tabs", 0..200, InterfaceEvent.ClickOp1)
+                    if (!isAdmin) {
+                        openGuide(player, row.bit)
+                        return@then
+                    }
+
+                    player.queue {
+                        when (options(player, "Guide", "Set Level")) {
+                            1 -> openGuide(player, row.bit)
+                            2 -> {
+                                val skillName = Skills.getSkillName(row.stat)
+                                val level = inputInt(player, "Enter a level for $skillName (1-99)").coerceIn(1, 99)
+
+                                player.getSkills().apply {
+                                    setBaseLevel(row.stat, level)
+                                    setCurrentLevel(row.stat, level)
+                                }
+                            }
+                        }
                     }
                 }
             }
         }
 
+        onButton("components.skill_guide:close") {
+            player.ifCloseOverlay("interfaces.skill_guide")
+        }
+
         onButton("components.skill_guide_v2:close") {
-            player.closeInterface(InterfaceDestination.MAIN_SCREEN)
+            player.ifCloseOverlay("interfaces.skill_guide_v2")
         }
 
     }
+
+    fun openGuide(player: Player, bit : Int) {
+        player.setVarbit("varbits.option_skill_guide",1)
+        val optionSkillGuide = player.getVarbit("varbits.option_skill_guide")
+
+        if (optionSkillGuide == 0) {
+            player.setVarbit("varbits.skill_guide_skill", bit)
+            player.setVarbit("varbits.skill_guide_subsection", 0)
+            player.ifOpenOverlay("interfaces.skill_guide")
+        } else {
+            player.ifOpenOverlay("interfaces.skill_guide_v2")
+            player.runClientScript(CommonClientScripts.SKILL_GUIDE,bit,0)
+            player.ifSetEvents("components.skill_guide_v2:tabs", 0..200, IfEvent.Op1)
+        }
+    }
+
 }

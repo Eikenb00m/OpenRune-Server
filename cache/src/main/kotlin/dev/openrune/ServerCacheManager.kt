@@ -2,6 +2,9 @@ package dev.openrune
 
 import dev.openrune.OsrsCacheProvider.*
 import dev.openrune.cache.CacheManager
+import dev.openrune.cache.filestore.definition.ComponentDecoder
+import dev.openrune.cache.filestore.definition.FontDecoder
+import dev.openrune.cache.filestore.definition.InterfaceType
 import dev.openrune.filesystem.Cache
 import java.nio.BufferUnderflowException
 import dev.openrune.cache.getOrDefault
@@ -9,11 +12,15 @@ import dev.openrune.definition.type.*
 import dev.openrune.codec.osrs.ItemDecoder
 import dev.openrune.codec.osrs.ObjectDecoder
 import dev.openrune.codec.osrs.HealthBarDecoder
+import dev.openrune.codec.osrs.InventoryDecoder
 import dev.openrune.codec.osrs.NpcDecoder
 import dev.openrune.codec.osrs.SequenceDecoder
+import dev.openrune.codec.osrs.impl.InventoryServerCodec
+import dev.openrune.definition.type.widget.ComponentType
 import dev.openrune.server.impl.item.ItemRenderDataManager
 import dev.openrune.types.*
 import io.github.oshai.kotlinlogging.KotlinLogging
+import org.alter.rscm.RSCM.asRSCM
 import java.nio.file.Path
 
 object ServerCacheManager {
@@ -29,6 +36,9 @@ object ServerCacheManager {
     private val varbits: MutableMap<Int, VarBitType> = mutableMapOf()
     private val varps: MutableMap<Int, VarpType> = mutableMapOf()
     private val sequences = mutableMapOf<Int, SequenceServerType>()
+    private var fonts = mutableMapOf<Int, FontType>()
+    private var interfaces = mutableMapOf<Int, InterfaceType>()
+    private var inv = mutableMapOf<Int, InventoryServerType>()
 
     val logger = KotlinLogging.logger {}
 
@@ -39,19 +49,24 @@ object ServerCacheManager {
 
     fun init(cache : Cache) {
         ItemRenderDataManager.init()
-        CacheManager.init(OsrsCacheProvider(cache,234))
+        CacheManager.init(OsrsCacheProvider(cache,235))
+
+        fonts = FontDecoder(cache).loadAllFonts()
+
         try {
             EnumDecoder().load(cache, enums)
             ObjectDecoder().load(cache, objects)
             HealthBarDecoder().load(cache, healthBars)
             NpcDecoder().load(cache, npcs)
             ItemDecoder().load(cache, items)
+            InventoryDecoder().load(cache,inv)
             SequenceDecoder().load(cache,sequences)
             VarBitDecoder().load(cache, varbits)
             VarDecoder().load(cache, varps)
             StructDecoder().load(cache, structs)
             DBRowDecoder().load(cache, dbrows)
             DBTableDecoder().load(cache, dbtables)
+            ComponentDecoder(cache).load(interfaces)
         } catch (e: BufferUnderflowException) {
             logger.error(e) { "Error reading definitions" }
             throw e
@@ -59,6 +74,7 @@ object ServerCacheManager {
     }
 
     fun getNpc(id: Int) = npcs[id]
+    fun getFont(id: Int) = fonts[id]
     fun getObject(id: Int) = objects[id]
     fun getItem(id: Int) = items[id]
     fun getVarbit(id: Int) = varbits[id]
@@ -69,6 +85,7 @@ object ServerCacheManager {
     fun getStruct(id: Int) = structs[id]
     fun getDbrow(id: Int) = dbrows[id]
     fun getDbtable(id: Int) = dbtables[id]
+    fun getInventory(id: Int) = inv[id]
 
     fun getNpcOrDefault(id: Int) = getOrDefault(npcs, id, NpcServerType(), "Npc")
     fun getObjectOrDefault(id: Int) = getOrDefault(objects, id, ObjectServerType(), "Object")
@@ -105,5 +122,19 @@ object ServerCacheManager {
     fun getAnims() = sequences.toMap()
     fun getRows() = dbrows.toMap()
 
+    fun fromInterface(id: Int): InterfaceType =
+        interfaces[id] ?: error("Interface $id not found")
+
+    fun fromInterface(id: String): InterfaceType =
+        fromInterface(id.asRSCM())
+
+    fun fromComponent(packed: Int): ComponentType {
+        val interfaceId = packed ushr 16
+        val childId = packed and 0xFFFF
+        return fromInterface(interfaceId).components[childId]
+            ?: error("Component $childId not found in interface $interfaceId")
+    }
+
+    fun fromComponent(id: String) = fromComponent(id.asRSCM())
 
 }

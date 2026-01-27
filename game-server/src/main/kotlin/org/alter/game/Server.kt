@@ -143,8 +143,15 @@ class Server {
          */
         individualStopwatch.reset().start()
         cache = Cache.load(filestore)
+
+        /**
+         * Initialize RSCM
+         */
+        GameValProvider.load()
+
         ServerCacheManager.init(cache)
         logger.info{"Loaded filestore from path ${filestore} in ${individualStopwatch.elapsed(TimeUnit.MILLISECONDS)}ms."}
+
 
         val world = World(gameContext, devContext)
 
@@ -174,11 +181,6 @@ class Server {
                 world.definitions.loadRegions(world, world.chunks, service.validRegions)
             }
         }
-
-        /**
-         * Initialize RSCM
-         */
-        GameValProvider.load()
 
         /*
          * Load the privileges for the game.

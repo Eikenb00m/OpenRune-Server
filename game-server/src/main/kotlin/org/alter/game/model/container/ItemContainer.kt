@@ -16,8 +16,9 @@ import org.alter.rscm.RSCMType
  * @author Tom <rspsmods@gmail.com>
  */
 class ItemContainer(val key: ContainerKey) : Iterable<Item?> {
+
     constructor(capacity: Int, stackType: ContainerStackType) :
-        this(ContainerKey("", capacity, stackType))
+        this(ContainerKey("","", capacity, stackType))
 
     constructor(other: ItemContainer) : this(other.capacity, other.stackType) {
         for (i in 0 until capacity) {
@@ -34,6 +35,9 @@ class ItemContainer(val key: ContainerKey) : Iterable<Item?> {
     private val stackType = key.stackType
 
     private val items = Array<Item?>(capacity) { null }
+
+    public val indices: IntRange
+        get() = items.indices
 
     /**
      * A flag which indicates that the [items] has been modified since the last
@@ -62,14 +66,7 @@ class ItemContainer(val key: ContainerKey) : Iterable<Item?> {
         return itemIds.all { getItemCount(it.id) >= it.amount }
     }
 
-    /**
-     * Checks if the container has an [Item] which has the same [Item.id] as
-     * [item] or any of the values (if any) in [others].
-     */
-    fun containsAny(
-        item: Int,
-        vararg others: Int,
-    ): Boolean = items.any { it != null && (it.id == item || it.id in others) }
+
     fun containsAny(
         item: String,
         vararg others: String
@@ -94,53 +91,6 @@ class ItemContainer(val key: ContainerKey) : Iterable<Item?> {
      */
     val freeSlotCount: Int get() = items.count { it == null }
 
-    /**
-     * Gets the most-right/last index(slot) that is not occupied by an [Item] but it next to an [Item].
-     * Defaults to -1 if none is found.
-     */
-    fun getLastFreeSlot(): Int {
-        var lastEmpty = -1
-        for (index in items.indices) {
-            if (items[index] == null) {
-                lastEmpty = index
-            } else {
-                break
-            }
-        }
-        return lastEmpty
-    }
-
-    /**
-     * @TODO Refactor.
-     */
-    fun getLastFreeSlot(startIndex: Int): Int {
-        var lastEmpty = -1
-        items.indices.reversed().forEach {
-            if (it > startIndex) {
-                if (items[it] == null) {
-                    lastEmpty = it
-                }
-            }
-        }
-        return lastEmpty
-    }
-
-    fun getLastFreeSlotReversed(): Int {
-        var lastEmpty = -1
-        for (index in items.indices.reversed()) {
-            if (items[index] == null) {
-                lastEmpty = index
-            } else {
-                break
-            }
-        }
-        return lastEmpty
-    }
-
-    /**
-     * Calculates the amount of slots that are occupied in this container.
-     */
-    val occupiedSlotCount: Int get() = items.count { it != null }
 
     /**
      * Check if the container is full.
@@ -151,18 +101,6 @@ class ItemContainer(val key: ContainerKey) : Iterable<Item?> {
      * Check if the container is completely empty.
      */
     val isEmpty: Boolean get() = items.none { it != null }
-
-    /**
-     * @return
-     * true if the container has any item at all which is not null.
-     */
-    val hasAny: Boolean get() = items.any { it != null }
-
-    /**
-     * @return
-     * true if the container has any free slot available.
-     */
-    val hasSpace: Boolean get() = nextFreeSlot != -1
 
     /**
      * Calculate the total amount of items in this container who's [Item.id]
@@ -214,17 +152,6 @@ class ItemContainer(val key: ContainerKey) : Iterable<Item?> {
     ): Int {
         for (i in 0 until capacity) {
             if (items[i]?.id == itemId && (!skipAttrItems || !items[i]!!.hasAnyAttr())) {
-                return i
-            }
-        }
-        return -1
-    }
-    fun getItemIndex(
-        itemId: String,
-        skipAttrItems: Boolean,
-    ): Int {
-        for (i in 0 until capacity) {
-            if (items[i]?.id == getRSCM(itemId) && (!skipAttrItems || !items[i]!!.hasAnyAttr())) {
                 return i
             }
         }

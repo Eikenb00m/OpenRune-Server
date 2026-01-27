@@ -19,10 +19,8 @@ import org.alter.game.model.attr.COMMAND_ATTR
 import org.alter.game.model.combat.NpcCombatDef
 import org.alter.game.model.container.key.*
 import org.alter.game.model.entity.*
-import org.alter.game.model.shop.Shop
 import org.alter.game.model.timer.TimerKey
 import org.alter.game.service.Service
-import java.net.URLClassLoader
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
@@ -46,11 +44,6 @@ class PluginRepository(
      * Plugins that get executed when the world is initialised.
      */
     private val worldInitPlugins = mutableListOf<Plugin.() -> Unit>()
-
-    /**
-     * The plugin that will executed when changing display modes.
-     */
-    private var windowStatusPlugin: (Plugin.() -> Unit)? = null
 
     /**
      * The plugin that will be executed when the core module wants
@@ -147,12 +140,6 @@ class PluginRepository(
     val commandPlugins = hashMapOf<String, Pair<String?, Plugin.() -> Unit>>()
 
     private val commandDescription = hashMapOf<String, String>()
-
-    /**
-     * A map of button click plugins. The key is a shifted value of the parent
-     * and child id.
-     */
-    private val buttonPlugins = Int2ObjectOpenHashMap<Plugin.() -> Unit>()
 
     /**
      * A map of equipment option plugins.
@@ -731,22 +718,6 @@ class PluginRepository(
         spellOnPlayerPlugins[hash] = plugin
     }
 
-    fun bindWindowStatus(plugin: Plugin.() -> Unit) {
-        if (windowStatusPlugin != null) {
-            logger.error { "Window status is already bound to a plugin" }
-            throw IllegalStateException("Window status is already bound to a plugin")
-        }
-        windowStatusPlugin = plugin
-    }
-
-    fun executeWindowStatus(p: Player) {
-        if (windowStatusPlugin != null) {
-            p.executePlugin(windowStatusPlugin!!)
-        } else {
-            logger.warn { "Window status is not bound to a plugin." }
-        }
-    }
-
     fun bindModalClose(plugin: Plugin.() -> Unit) {
         if (closeModalPlugin != null) {
             logger.error { "Modal close is already bound to a plugin" }
@@ -758,8 +729,6 @@ class PluginRepository(
     fun executeModalClose(p: Player) {
         if (closeModalPlugin != null) {
             p.executePlugin(closeModalPlugin!!)
-        } else {
-            logger.warn { "Modal close is not bound to a plugin." }
         }
     }
 
@@ -1024,33 +993,6 @@ class PluginRepository(
         return false
     }
 
-    fun bindButton(
-        parent: Int,
-        child: Int,
-        plugin: Plugin.() -> Unit,
-    ) {
-        val hash = (parent shl 16) or child
-        if (buttonPlugins.containsKey(hash)) {
-            logger.error { "Button hash already bound to a plugin: [parent=$parent, child=$child]" }
-            throw IllegalStateException("Button hash already bound to a plugin: [parent=$parent, child=$child]")
-        }
-        buttonPlugins[hash] = plugin
-    }
-
-    fun executeButton(
-        p: Player,
-        parent: Int,
-        child: Int,
-    ): Boolean {
-        val hash = (parent shl 16) or child
-        val plugin = buttonPlugins[hash]
-        if (plugin != null) {
-            p.executePlugin(plugin)
-            return true
-        }
-        return false
-    }
-
     fun bindEquipmentOption(
         item: Int,
         option: Int,
@@ -1211,7 +1153,7 @@ class PluginRepository(
     }
 
     fun hasExecItemCmbtLogic(p: Player): Boolean {
-        p.equipment.rawItems.forEach {
+        p.equipment.objs.forEach {
             if (itemCombatLogic.contains(it?.id)) {
                 return true
             }
