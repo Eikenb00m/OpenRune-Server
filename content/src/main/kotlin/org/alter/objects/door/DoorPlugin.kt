@@ -60,8 +60,8 @@ class DoorPlugin(
     }
 
     fun handleDoubleDoors(p: Player, obj: GameObject, doors: DoubleDoorSet, open: Boolean) {
-        val left = obj.id == doors.opened.left || obj.id == doors.closed.left
-        val right = obj.id == doors.opened.right || obj.id == doors.closed.right
+        val left = obj.internalID == doors.opened.left || obj.internalID == doors.closed.left
+        val right = obj.internalID == doors.opened.right || obj.internalID == doors.closed.right
 
         check(left || right)
 
@@ -97,7 +97,7 @@ class DoorPlugin(
                 }
                 val transform = tile.transform(x, z)
                 val tileObj = world.getObject(transform, type = obj.type)
-                if (tileObj?.id == otherDoor) {
+                if (tileObj?.internalID == otherDoor) {
                     return tileObj
                 }
             }

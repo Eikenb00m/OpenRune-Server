@@ -2,6 +2,7 @@ package org.alter.objects.door
 
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
+import dev.openrune.filesystem.Cache
 import gg.rsmod.util.ServerProperties
 import it.unimi.dsi.fastutil.objects.ObjectArrayList
 import org.alter.api.ext.appendToString
@@ -20,6 +21,7 @@ class DoorService : Service {
     val doubleDoors = ObjectArrayList<DoubleDoorSet>()
 
     override fun init(
+        cache: Cache,
         server: org.alter.game.Server,
         world: World,
         serviceProperties: ServerProperties,
