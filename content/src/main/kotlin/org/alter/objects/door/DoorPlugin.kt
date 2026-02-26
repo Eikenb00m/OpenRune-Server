@@ -23,14 +23,14 @@ class DoorPlugin(
         onWorldInit {
             world.getService(DoorService::class.java)?.let { service ->
                 service.doors.forEach { door ->
-                    onObjOption(obj = door.opened, option = "close") {
+                    r.bindObject(door.opened, 1) {
                         val obj = player.getInteractingGameObj()
                         val newDoor = world.closeDoor(obj, closed = door.closed, invertTransform = obj.type == WALL_DIAGONAL)
                         copyStickVars(obj, newDoor)
                         player.playSound(Sound.CLOSE_DOOR_SFX)
                     }
 
-                    onObjOption(obj = door.closed, option = "open") {
+                    r.bindObject(door.closed, 1) {
                         val obj = player.getInteractingGameObj()
                         val newDoor = world.openDoor(obj, opened = door.opened, invertTransform = obj.type == WALL_DIAGONAL)
                         copyStickVars(obj, newDoor)
@@ -39,19 +39,19 @@ class DoorPlugin(
                 }
 
                 service.doubleDoors.forEach { doors ->
-                    onObjOption(obj = doors.closed.left, option = "open") {
+                    r.bindObject(doors.closed.left, 1) {
                         handleDoubleDoors(player, player.getInteractingGameObj(), doors, open = true)
                     }
 
-                    onObjOption(obj = doors.closed.right, option = "open") {
+                    r.bindObject(doors.closed.right, 1) {
                         handleDoubleDoors(player, player.getInteractingGameObj(), doors, open = true)
                     }
 
-                    onObjOption(obj = doors.opened.left, option = "close") {
+                    r.bindObject(doors.opened.left, 1) {
                         handleDoubleDoors(player, player.getInteractingGameObj(), doors, open = false)
                     }
 
-                    onObjOption(obj = doors.opened.right, option = "close") {
+                    r.bindObject(doors.opened.right, 1) {
                         handleDoubleDoors(player, player.getInteractingGameObj(), doors, open = false)
                     }
                 }
