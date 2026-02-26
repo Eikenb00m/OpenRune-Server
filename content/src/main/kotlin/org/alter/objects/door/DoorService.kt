@@ -9,6 +9,7 @@ import org.alter.api.ext.appendToString
 import org.alter.game.Server.Companion.logger
 import org.alter.game.model.World
 import org.alter.game.service.Service
+import org.alter.rscm.RSCM.getRSCM
 import java.nio.file.Files
 import java.nio.file.Paths
 
@@ -31,12 +32,19 @@ class DoorService : Service {
 
         Files.newBufferedReader(singleDoorFile).use { reader ->
             val doors = Gson().fromJson<ObjectArrayList<Door>>(reader, object : TypeToken<ObjectArrayList<Door>>() {}.type)
-            this.doors.addAll(doors)
+            this.doors.addAll(doors.map { Door(closed = getRSCM(it.closed), opened = getRSCM(it.opened)) })
         }
 
         Files.newBufferedReader(doubleDoorsFile).use { reader ->
             val doors = Gson().fromJson<ObjectArrayList<DoubleDoorSet>>(reader, object : TypeToken<ObjectArrayList<DoubleDoorSet>>() {}.type)
-            this.doubleDoors.addAll(doors)
+            this.doubleDoors.addAll(
+                doors.map {
+                    DoubleDoorSet(
+                        opened = DoubleDoor(left = getRSCM(it.opened.left), right = getRSCM(it.opened.right)),
+                        closed = DoubleDoor(left = getRSCM(it.closed.left), right = getRSCM(it.closed.right)),
+                    )
+                },
+            )
         }
 
         logger.info { "Loaded ${doors.size.appendToString("single door")} and ${doubleDoors.size.appendToString("double door")}." }
