@@ -3725,3 +3725,44 @@ id = "npc.grinder_drew"
 inherit = "npc.grinder_drew"
 moveRestrict = "NoMove"
 wanderRange = 0
+
+[[npc]]
+id = "npc.wom_gossip"
+inherit = "npc.wom_gossip"
+moveRestrict = "NoMove"
+wanderRange = 0
+respawnDir = "South"
+
+[[npc]]
+id = "npc.wise_old_man"
+inherit = "npc.wise_old_man"
+moveRestrict = "NoMove"
+wanderRange = 0
+respawnDir = "South"
+
+[[npc]]
+id = "npc.banker1"
+inherit = "npc.banker1"
+moveRestrict = "NoMove"
+wanderRange = 0
+respawnDir = "East"
+
+[[npc]]
+id = "npc.banker2"
+inherit = "npc.banker2"
+moveRestrict = "NoMove"
+wanderRange = 0
+respawnDir = "East"
+
+[[npc]]
+id = "npc.forestry_forester_nostorage"
+inherit = "npc.forestry_forester_nostorage"
+moveRestrict = "NoMove"
+wanderRange = 0
+respawnDir = "South"
+
+[[npc]]
+id = "npc.wom_bankguard"
+inherit = "npc.wom_bankguard"
+wanderRange = 2
+respawnDir = "North"
